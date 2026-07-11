@@ -832,6 +832,36 @@
       padding: 2px 2px 0;
     }
 
+    .tiji-tip {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(31, 107, 58, 0.08), rgba(201, 162, 39, 0.12));
+      border: 1px solid rgba(31, 107, 58, 0.22);
+      font-size: 0.9rem;
+      line-height: 1.75;
+      letter-spacing: 0.03em;
+      color: var(--ink);
+    }
+
+    .tiji-tip .tiji-label {
+      display: block;
+      font-family: "Noto Serif TC", serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--yi);
+      letter-spacing: 0.15em;
+      margin-bottom: 6px;
+    }
+
+    .aspect-grid.five {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .aspect-grid.five .aspect:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+    }
+
     footer {
       text-align: center;
       margin-top: 18px;
@@ -2216,6 +2246,67 @@
       return Number(person.birthSolar.replace(/-/g, ""));
     }
 
+    function buildTijiTip(person, ctx) {
+      const { jianchu, yiji, liuren, qimen, rel, dayGZ, pianCai } = ctx;
+      const hlPart = (() => {
+        if (["成", "開", "滿"].includes(jianchu)) {
+          return `黃曆「${jianchu}日」氣機偏開，宜主動推進、見好就收`;
+        }
+        if (["破", "閉", "危"].includes(jianchu)) {
+          return `黃曆「${jianchu}日」宜守不宜攻，少開新局、少動大財`;
+        }
+        if (jianchu === "收" || jianchu === "定") {
+          return `黃曆「${jianchu}日」適合收斂成果、把細節做實`;
+        }
+        return `黃曆「${jianchu}日」行事求穩，有把握再出手`;
+      })();
+
+      const yiHint = (yiji.yi || []).find(x =>
+        ["求財", "開市", "交易", "納財", "出行", "會友", "上任"].includes(x)
+      );
+      const jiHint = (yiji.ji || []).find(x =>
+        ["諸事不宜", "嫁娶", "開市", "安葬", "詞訟", "遠行"].includes(x)
+      );
+
+      const lr = liuren;
+      const chuan = lr && lr.sanchuan ? lr.sanchuan : null;
+      const lrPart = chuan
+        ? (chuan.method.includes("伏吟")
+          ? `六壬伏吟，心思易轉圈，決策先放一放`
+          : chuan.method.includes("返吟")
+            ? `六壬返吟多反覆，合約與口頭承諾都宜再確認`
+            : `六壬三傳${chuan.chu}→${chuan.zhong}→${chuan.mo}（${chuan.method}），步步為營、不抄近路`)
+        : `六壬宜以穩為主`;
+
+      const qm = qimen;
+      let qmPart = "奇門宜穩守本位";
+      if (qm && qm.lucky && !String(qm.lucky).includes("中宮")) {
+        // 取前兩個吉方簡寫
+        const shortLucky = String(qm.lucky).split("、").slice(0, 2).join("、");
+        qmPart = `奇門吉方可走${shortLucky}，洽公、談事往吉方移動較利`;
+      } else if (qm && qm.zhishi) {
+        qmPart = `奇門值使${qm.zhishi.split("→")[0].trim()}，今日行動節奏跟著「該動才動」`;
+      }
+
+      const colorTip = `穿${person.luckyColors.slice(0, 2).join("、")}系略助運`;
+      const caiTip = pianCai >= 70
+        ? "偏財有機會但不宜賭運氣，小試即可"
+        : pianCai < 45
+          ? "偏財偏弱，拒高風險投機與臨時借款"
+          : "偏財平平，正財踏實比橫財重要";
+
+      const relTip = rel.key === "冲" || rel.key === "害"
+        ? "本命冲害日少硬碰，大事可延一天。"
+        : rel.key === "合" || rel.key === "三合"
+          ? "本命合日可託人、可合作。"
+          : "";
+
+      const avoid = jiHint ? `忌「${jiHint}」` : "忌意氣用事";
+      const go = yiHint ? `可順「${yiHint}」之象` : "可做可控範圍內的推進";
+
+      return `${hlPart}；${lrPart}；${qmPart}。${relTip}${go}，${avoid}；${caiTip}，${colorTip}。`;
+    }
+
     function computePersonalFortune(date, almanacCtx, person) {
       ensurePersonProfile(person);
       const y = date.getFullYear();
@@ -2224,6 +2315,8 @@
       const dayGZ = almanacCtx.dayGZ;
       const jianchu = almanacCtx.jianchu;
       const yiji = almanacCtx.yiji;
+      const liuren = almanacCtx.liuren;
+      const qimen = almanacCtx.qimen;
       const isFemale = person.gender === "female";
 
       const birthDay = person.birthDayGZ;
@@ -2275,6 +2368,33 @@
         15, 98
       );
 
+      // 偏財運：橫財、獎金、副業、非固定收入（結合黃曆／六壬／奇門）
+      let pianExtra = 0;
+      if (["滿", "成", "收", "開"].includes(jianchu)) pianExtra += 8;
+      if (["破", "閉", "危", "執"].includes(jianchu)) pianExtra -= 10;
+      if ((yiji.yi || []).some(x => ["求財", "開市", "交易", "納財"].includes(x))) pianExtra += 6;
+      if ((yiji.ji || []).some(x => ["開市", "諸事不宜"].includes(x))) pianExtra -= 6;
+      if (rel.key === "合" || rel.key === "三合") pianExtra += 4;
+      if (rel.key === "冲" || rel.key === "害") pianExtra -= 7;
+      // 六壬：末傳/初傳為「我克」之財象略加（以年干五行為我）
+      if (liuren && liuren.sanchuan) {
+        const moWx = WUXING_ZHI[liuren.sanchuan.mo];
+        const chuWx = WUXING_ZHI[liuren.sanchuan.chu];
+        if (wuxingRelation(yearWx, moWx) === "我克" || wuxingRelation(yearWx, chuWx) === "我克") pianExtra += 5;
+        if (liuren.sanchuan.method.includes("返吟") || liuren.sanchuan.method.includes("伏吟")) pianExtra -= 4;
+      }
+      // 奇門：有開/生門吉方
+      if (qimen && qimen.lucky && /開門|生門/.test(qimen.lucky)) pianExtra += 6;
+      if (qimen && qimen.zhishi && /死門|驚門|傷門/.test(qimen.zhishi)) pianExtra -= 3;
+      if (person.preferWx.includes(dayWx)) pianExtra += 3;
+      if (person.avoidWx.includes(dayWx)) pianExtra -= 4;
+
+      const pianCai = clamp(
+        total + pianExtra + (((seed >> 6) % 11) - 5) + (isFemale ? 1 : 0),
+        15,
+        98
+      );
+
       const [by, bm, bd] = person.birthSolar.split("-").map(Number);
       let age = y - by;
       if (m < bm || (m === bm && d < bd)) age -= 1;
@@ -2313,6 +2433,8 @@
         if (isFemale) personJi.push("衝動購物宣洩情緒");
       }
       if (wealth >= 70) personYi.push("收取帳款、盤點資產");
+      if (pianCai >= 70) personYi.push("把握合理獎金／副業機會，小額試水即可");
+      if (pianCai < 45) personJi.push("彩券博弈、跟風投資、臨時大額借款");
       if (career >= 70) personYi.push(isFemale ? "主動分享成果、溫柔堅持立場" : "主動回報進度、爭取能見度");
       if ((isFemale ? love : social) >= 70) {
         personYi.push(isFemale ? "與親友連結、用心陪伴另一半或閨密" : "聚會聯誼、溫和表達想法");
@@ -2373,6 +2495,10 @@
       const L = person.birthLunar;
       const lunarShort = (L.isLeap ? "閏" : "") + LUNAR_MONTHS[L.month - 1] + "月" + LUNAR_DAYS[L.day - 1];
 
+      const tijiTip = buildTijiTip(person, {
+        jianchu, yiji, liuren, qimen, rel, dayGZ, pianCai
+      });
+
       return {
         person,
         score: total,
@@ -2389,12 +2515,14 @@
           ? [
               { name: "事業", score: career },
               { name: "財運", score: wealth },
+              { name: "偏財", score: pianCai },
               { name: "感情", score: love },
               { name: "健康", score: health }
             ]
           : [
               { name: "事業", score: career },
               { name: "財運", score: wealth },
+              { name: "偏財", score: pianCai },
               { name: "人際", score: social },
               { name: "健康", score: health }
             ],
@@ -2402,6 +2530,7 @@
         ji,
         notes: uniq(notes).slice(0, 5),
         summary,
+        tijiTip,
         chips: [
           `生肖 ${person.xiao}`,
           person.genderLabel ? `性別 ${person.genderLabel}` : null,
@@ -2481,7 +2610,7 @@
           <div class="personal-body">
             <div class="profile-row">${p.chips.map(c => `<span class="chip">${c}</span>`).join("")}</div>
             <div class="relation-box">${p.relation.label}　<span class="stars">${p.stars}</span></div>
-            <div class="aspect-grid">
+            <div class="aspect-grid five">
               ${p.aspects.map(a => `
                 <div class="aspect">
                   <div class="a-name">${a.name}</div>
@@ -2504,6 +2633,10 @@
               <ul>${p.notes.map(t => `<li>${t}</li>`).join("")}</ul>
             </div>
             <p class="summary-text">${p.summary}</p>
+            <div class="tiji-tip">
+              <span class="tiji-label">趨吉避凶 · 提高運勢</span>
+              ${p.tijiTip || "今日以穩為主，順勢而為即可。"}
+            </div>
           </div>
         </section>
       `;
