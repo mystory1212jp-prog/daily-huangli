@@ -354,6 +354,129 @@
 
     .meta-item.full { grid-column: 1 / -1; }
 
+    .liuren-box {
+      grid-column: 1 / -1;
+      background: linear-gradient(180deg, #fffdf7, var(--paper-dark));
+      border: 1px solid rgba(201, 162, 39, 0.28);
+      border-radius: 12px;
+      padding: 14px 12px 12px;
+      text-align: left;
+    }
+
+    .liuren-box > .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .liuren-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 10px;
+      margin-bottom: 10px;
+    }
+
+    .liuren-grid .row {
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .liuren-grid .row .k {
+      color: var(--muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .liuren-grid .row .v {
+      font-family: "Noto Serif TC", serif;
+      font-weight: 700;
+      color: var(--red-deep);
+      letter-spacing: 0.06em;
+    }
+
+    .liuren-grid .row.span2 { grid-column: 1 / -1; }
+
+    .liuren-ke {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin: 8px 0 10px;
+    }
+
+    .liuren-ke .ke {
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(201, 162, 39, 0.25);
+      border-radius: 8px;
+      padding: 6px 4px;
+      text-align: center;
+    }
+
+    .liuren-ke .ke .kn {
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      margin-bottom: 3px;
+    }
+
+    .liuren-ke .ke .kv {
+      font-family: "Noto Serif TC", serif;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: 0.04em;
+    }
+
+    .liuren-chuan {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .liuren-chuan .ch {
+      flex: 1;
+      text-align: center;
+      background: linear-gradient(160deg, rgba(155, 28, 28, 0.08), rgba(201, 162, 39, 0.12));
+      border: 1px solid rgba(155, 28, 28, 0.15);
+      border-radius: 10px;
+      padding: 8px 4px;
+    }
+
+    .liuren-chuan .ch .cn {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    .liuren-chuan .ch .cv {
+      font-family: "Noto Serif TC", serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--red-deep);
+      margin-top: 2px;
+      letter-spacing: 0.08em;
+    }
+
+    .liuren-chuan .ch .ct {
+      font-size: 0.72rem;
+      color: var(--ink);
+      margin-top: 2px;
+      opacity: 0.85;
+    }
+
+    .liuren-note {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+      letter-spacing: 0.04em;
+      line-height: 1.5;
+      margin-top: 4px;
+    }
+
     .yi-ji {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -711,6 +834,35 @@
           <div class="meta-item full">
             <div class="label">方位參考</div>
             <div class="value" id="fangwei">—</div>
+          </div>
+
+          <div class="liuren-box" id="liurenBox">
+            <div class="label">大六壬日課</div>
+            <div class="liuren-grid">
+              <div class="row">
+                <span class="k">月將</span>
+                <span class="v" id="lrYuejiang">—</span>
+              </div>
+              <div class="row">
+                <span class="k">占時</span>
+                <span class="v" id="lrZhanshi">—</span>
+              </div>
+              <div class="row">
+                <span class="k">旬空</span>
+                <span class="v" id="lrXunkong">—</span>
+              </div>
+              <div class="row">
+                <span class="k">貴人</span>
+                <span class="v" id="lrGuiren">—</span>
+              </div>
+              <div class="row span2">
+                <span class="k">日辰寄宮</span>
+                <span class="v" id="lrJigong">—</span>
+              </div>
+            </div>
+            <div class="liuren-ke" id="lrSike"></div>
+            <div class="liuren-chuan" id="lrSanchuan"></div>
+            <div class="liuren-note" id="lrNote">以月將加時起天地盤 · 四課三傳 · 僅供參考</div>
           </div>
         </div>
 
@@ -1120,6 +1272,355 @@
       return `${yearGZ.full}年【${xiao}年】 ${monthName}${dayName}`;
     }
 
+    /* ========== 大六壬 ========== */
+    const YUEJIANG_NAMES = {
+      子: "神後", 丑: "大吉", 寅: "功曹", 卯: "太沖",
+      辰: "天罡", 巳: "太乙", 午: "勝光", 未: "小吉",
+      申: "傳送", 酉: "從魁", 戌: "河魁", 亥: "登明"
+    };
+
+    // 中氣換將（常見簡易表）：中氣之後換月將
+    // 雨水亥、春分戌、穀雨酉、小滿申、夏至未、大暑午、
+    // 處暑巳、秋分辰、霜降卯、小雪寅、冬至丑、大寒子
+    const YUEJIANG_BY_ZHONGQI = [
+      { name: "雨水", zhi: "亥" },
+      { name: "春分", zhi: "戌" },
+      { name: "穀雨", zhi: "酉" },
+      { name: "小滿", zhi: "申" },
+      { name: "夏至", zhi: "未" },
+      { name: "大暑", zhi: "午" },
+      { name: "處暑", zhi: "巳" },
+      { name: "秋分", zhi: "辰" },
+      { name: "霜降", zhi: "卯" },
+      { name: "小雪", zhi: "寅" },
+      { name: "冬至", zhi: "丑" },
+      { name: "大寒", zhi: "子" }
+    ];
+
+    // 日干寄宮
+    const GAN_JIGONG = {
+      甲: "寅", 乙: "辰", 丙: "巳", 丁: "未",
+      戊: "巳", 己: "未", 庚: "申", 辛: "戌",
+      壬: "亥", 癸: "丑"
+    };
+
+    // 晝貴 / 夜貴（甲戊庚牛羊…）
+    const GUIREN_DAY = { 甲: "丑", 戊: "丑", 庚: "丑", 乙: "子", 己: "子", 丙: "亥", 丁: "亥", 壬: "巳", 癸: "巳", 辛: "午" };
+    const GUIREN_NIGHT = { 甲: "未", 戊: "未", 庚: "未", 乙: "申", 己: "申", 丙: "酉", 丁: "酉", 壬: "卯", 癸: "卯", 辛: "寅" };
+
+    const TIANJIANG = ["貴人", "螣蛇", "朱雀", "六合", "勾陳", "青龍", "天空", "白虎", "太常", "玄武", "太陰", "天后"];
+
+    const WX_ZHI_NUM = { 木: 0, 火: 1, 土: 2, 金: 3, 水: 4 };
+    // 地支五行已有 WUXING_ZHI；天干五行 WUXING_GAN
+
+    function zhiIndex(z) { return DI_ZHI.indexOf(z); }
+
+    function hourZhiFromDate(date) {
+      // 23–1子 1–3丑 … 21–23亥
+      const h = date.getHours();
+      const idx = Math.floor(((h + 1) % 24) / 2);
+      return DI_ZHI[idx];
+    }
+
+    function isDaytimeHour(hourZhi) {
+      // 卯至申為晝，酉至寅為夜
+      const daySet = new Set(["卯", "辰", "巳", "午", "未", "申"]);
+      return daySet.has(hourZhi);
+    }
+
+    function getYueJiang(date) {
+      // 使用與 getJieQi 相同的近似中氣日
+      const zhongqiApprox = [
+        [2, 19, "雨水"], [3, 21, "春分"], [4, 20, "穀雨"], [5, 21, "小滿"],
+        [6, 21, "夏至"], [7, 23, "大暑"], [8, 23, "處暑"], [9, 23, "秋分"],
+        [10, 23, "霜降"], [11, 22, "小雪"], [12, 22, "冬至"], [1, 20, "大寒"]
+      ];
+      const y = date.getFullYear();
+      // 找出當前日期對應、最近已過的中氣
+      let best = { zhi: "丑", jie: "冬至", name: "大吉" }; // 冬至後丑將預設
+      const map = Object.fromEntries(YUEJIANG_BY_ZHONGQI.map(x => [x.name, x.zhi]));
+
+      // 建今年+去年冬至大寒點
+      const points = [];
+      for (const yy of [y - 1, y, y + 1]) {
+        for (const [mm, dd, name] of zhongqiApprox) {
+          points.push({ date: new Date(yy, mm - 1, dd, 12), name, zhi: map[name] });
+        }
+      }
+      points.sort((a, b) => a.date - b.date);
+      for (const p of points) {
+        if (daysBetween(p.date, date) >= 0) {
+          best = { zhi: p.zhi, jie: p.name, name: YUEJIANG_NAMES[p.zhi] };
+        }
+      }
+      return best;
+    }
+
+    function buildTianPan(yueJiangZhi, hourZhi) {
+      // 月將加於占時：占時地盤上安月將，其餘順布
+      const wi = zhiIndex(yueJiangZhi);
+      const hi = zhiIndex(hourZhi);
+      // tianOnEarth[earthIndex] = heaven zhi
+      const tianOnEarth = [];
+      for (let e = 0; e < 12; e++) {
+        tianOnEarth[e] = DI_ZHI[(wi + (e - hi) + 12) % 12];
+      }
+      // heavenAt(earthZhi) -> tian zhi
+      const heavenAt = (earthZhi) => tianOnEarth[zhiIndex(earthZhi)];
+      // earthUnder(tianZhi) -> which earth has this heaven
+      const earthUnder = (tianZhi) => {
+        for (let e = 0; e < 12; e++) {
+          if (tianOnEarth[e] === tianZhi) return DI_ZHI[e];
+        }
+        return tianZhi;
+      };
+      return { tianOnEarth, heavenAt, earthUnder };
+    }
+
+    function getXunKong(dayGan, dayZhi) {
+      // 日柱所在旬
+      let idx = 0;
+      for (let i = 0; i < 60; i++) {
+        if (TIAN_GAN[i % 10] === dayGan && DI_ZHI[i % 12] === dayZhi) { idx = i; break; }
+      }
+      const xunStart = Math.floor(idx / 10) * 10;
+      // 旬空：该旬不含的两支
+      const present = new Set();
+      for (let i = 0; i < 10; i++) present.add(DI_ZHI[(xunStart + i) % 12]);
+      // actually 甲子旬: 甲子...癸酉, 空戌亥 — 地支连续10个从子
+      const startZhi = DI_ZHI[xunStart % 12];
+      // better: 六甲旬空表
+      const xunTable = [
+        { gan: "甲", zhi: "子", kong: ["戌", "亥"] },
+        { gan: "甲", zhi: "戌", kong: ["申", "酉"] },
+        { gan: "甲", zhi: "申", kong: ["午", "未"] },
+        { gan: "甲", zhi: "午", kong: ["辰", "巳"] },
+        { gan: "甲", zhi: "辰", kong: ["寅", "卯"] },
+        { gan: "甲", zhi: "寅", kong: ["子", "丑"] }
+      ];
+      // find which 甲xun contains this day
+      const jiaZi = idx;
+      const xun = Math.floor(jiaZi / 10);
+      const kongs = [
+        ["戌", "亥"], ["申", "酉"], ["午", "未"],
+        ["辰", "巳"], ["寅", "卯"], ["子", "丑"]
+      ][xun];
+      return kongs;
+    }
+
+    function wuxingKe(a, b) {
+      // a 克 b?
+      const order = ["木", "火", "土", "金", "水"];
+      const ia = order.indexOf(a);
+      const ib = order.indexOf(b);
+      if (ia < 0 || ib < 0) return false;
+      return (ia + 2) % 5 === ib;
+    }
+
+    function zhiWx(z) { return WUXING_ZHI[z]; }
+
+    function buildTianJiangMap(dayGan, hourZhi) {
+      // 貴人起將，順逆布十二天將
+      const day = isDaytimeHour(hourZhi);
+      const gui = day ? GUIREN_DAY[dayGan] : GUIREN_NIGHT[dayGan];
+      // 貴人地盤位置：貴人天盤加於某宮 — 天將排在地盤上
+      // 標準：以貴人所臨地盤為起點
+      // 貴人順行：亥至辰；逆行：巳至戌
+      const guiEarth = gui; // 貴人本身是天盤神，其所臨地盤
+      // 簡化常用法：晝貴順、夜貴逆（或依貴人落宮）
+      // 口訣：貴人順布亥至辰，逆布巳至戌 — 以貴人所臨地盤判斷
+      // 這裡用：晝貴順行、夜貴逆行（通行簡法）
+      const shun = day;
+      const startEarth = gui; // 將貴人安在與貴人同名之地盤（地盤gui宮上天將為貴人）— 不精確
+      // 正確：先確定貴人加於何宮（天盤貴人落在哪地盤）— 需天地盤
+      return { gui, day, shun };
+    }
+
+    function assignTianJiang(pan, dayGan, hourZhi) {
+      // 貴人加臨：天盤上貴人支所在地盤
+      const day = isDaytimeHour(hourZhi);
+      const guiZhi = day ? GUIREN_DAY[dayGan] : GUIREN_NIGHT[dayGan];
+      // 貴人作為天盤神，落在 earthUnder(guiZhi)
+      const guiEarth = pan.earthUnder(guiZhi);
+      const gi = zhiIndex(guiEarth);
+      // 順逆：貴人地盤在亥子丑寅卯辰則順，巳午未申酉戌則逆
+      const shunSet = new Set(["亥", "子", "丑", "寅", "卯", "辰"]);
+      const shun = shunSet.has(guiEarth);
+      // jiangOnEarth[e] = 天將名
+      const jiangOnEarth = new Array(12);
+      for (let k = 0; k < 12; k++) {
+        const earthI = shun ? (gi + k) % 12 : (gi - k + 12) % 12;
+        jiangOnEarth[earthI] = TIANJIANG[k];
+      }
+      // 天盤神 z 的天將：先找 z 所臨地盤
+      const jiangOfTian = (tianZhi) => {
+        const e = pan.earthUnder(tianZhi);
+        return jiangOnEarth[zhiIndex(e)];
+      };
+      return { guiZhi, guiEarth, shun, jiangOnEarth, jiangOfTian, isDay: day };
+    }
+
+    function buildSiKe(dayGan, dayZhi, pan) {
+      const ganGong = GAN_JIGONG[dayGan];
+      // 第一課：干上神
+      const ke1Upper = pan.heavenAt(ganGong);
+      const ke1Lower = ganGong;
+      // 第二課：第一課上神之上神
+      const ke2Upper = pan.heavenAt(ke1Upper);
+      const ke2Lower = ke1Upper;
+      // 第三課：支上神
+      const ke3Upper = pan.heavenAt(dayZhi);
+      const ke3Lower = dayZhi;
+      // 第四課
+      const ke4Upper = pan.heavenAt(ke3Upper);
+      const ke4Lower = ke3Upper;
+
+      const kes = [
+        { n: 1, name: "一課", upper: ke1Upper, lower: ke1Lower, label: `${ke1Upper}${ke1Lower}` },
+        { n: 2, name: "二課", upper: ke2Upper, lower: ke2Lower, label: `${ke2Upper}${ke2Lower}` },
+        { n: 3, name: "三課", upper: ke3Upper, lower: ke3Lower, label: `${ke3Upper}${ke3Lower}` },
+        { n: 4, name: "四課", upper: ke4Upper, lower: ke4Lower, label: `${ke4Upper}${ke4Lower}` }
+      ];
+      return kes;
+    }
+
+    function relationKe(upper, lower) {
+      const uw = zhiWx(upper);
+      const lw = zhiWx(lower);
+      if (wuxingKe(lw, uw)) return "贼"; // 下贼上
+      if (wuxingKe(uw, lw)) return "克"; // 上克下
+      return "平";
+    }
+
+    function takeSanChuan(kes, dayGan, dayZhi, pan) {
+      // 九宗門精簡：賊克→比用→涉害→遙克→昂星→別責→八專→伏吟→返吟
+      const dayWx = WUXING_GAN[dayGan];
+
+      const annotated = kes.map(k => ({
+        ...k,
+        rel: relationKe(k.upper, k.lower)
+      }));
+
+      const thieves = annotated.filter(k => k.rel === "贼");
+      const keShang = annotated.filter(k => k.rel === "克");
+
+      function biYong(cands) {
+        // 與日干五行比和（同）者優先；陽日取陽支、陰日取陰支簡化
+        const same = cands.filter(k => zhiWx(k.upper) === dayWx);
+        if (same.length === 1) return same[0];
+        if (same.length > 1) return sheHai(same);
+        return sheHai(cands);
+      }
+
+      function sheHai(cands) {
+        // 涉害：上神臨地盤後，順行至本五行墓庫所經深淺（簡化：取課序靠前）
+        // 更簡：取四課中序號最小
+        return [...cands].sort((a, b) => a.n - b.n)[0];
+      }
+
+      let chu = null;
+      let method = "";
+
+      // 伏吟：天地盤相同（月將=占時）
+      const isFuYin = pan.heavenAt("子") === "子" && pan.heavenAt("午") === "午";
+      // 返吟：天盤冲地盤（月將冲占時）
+      const yj = pan.heavenAt; // check if all are chong
+      const isFanYin = DI_ZHI.every((z, i) => CHONG_MAP[z] === pan.tianOnEarth[i]);
+
+      if (isFuYin) {
+        method = "伏吟";
+        // 伏吟取法簡化：杜傳用日支三合或刑
+        chu = { upper: dayZhi, lower: dayZhi, n: 0 };
+      } else if (isFanYin) {
+        method = "返吟";
+        // 返吟有克取克，無克用驿马
+        if (thieves.length || keShang.length) {
+          const pool = thieves.length ? thieves : keShang;
+          chu = biYong(pool);
+        } else {
+          // 驛馬：申子辰馬在寅，寅午戌馬在申，亥卯未馬在巳，巳酉丑馬在亥
+          const ma = { 申: "寅", 子: "寅", 辰: "寅", 寅: "申", 午: "申", 戌: "申", 亥: "巳", 卯: "巳", 未: "巳", 巳: "亥", 酉: "亥", 丑: "亥" };
+          chu = { upper: ma[dayZhi], lower: dayZhi, n: 0 };
+        }
+      } else if (thieves.length === 1) {
+        method = "重審（下賊上）";
+        chu = thieves[0];
+      } else if (thieves.length > 1) {
+        method = "比用（多賊）";
+        chu = biYong(thieves);
+      } else if (keShang.length === 1) {
+        method = "元首（上克下）";
+        chu = keShang[0];
+      } else if (keShang.length > 1) {
+        method = "比用（多克）";
+        chu = biYong(keShang);
+      } else {
+        // 遙克：日干克課上神 或 課上神克日干
+        const yao = annotated.filter(k => {
+          const uw = zhiWx(k.upper);
+          return wuxingKe(dayWx, uw) || wuxingKe(uw, dayWx);
+        });
+        if (yao.length === 1) {
+          method = "遙克";
+          chu = yao[0];
+        } else if (yao.length > 1) {
+          method = "遙克比用";
+          chu = biYong(yao);
+        } else {
+          // 昂星 / 別責 簡化：陽日取支上神，陰日取干上神
+          method = "昂星（簡）";
+          const yangGan = "甲丙戊庚壬".includes(dayGan);
+          chu = yangGan ? annotated[2] : annotated[0];
+        }
+      }
+
+      const chuShen = chu.upper;
+      const zhongShen = pan.heavenAt(chuShen);
+      const moShen = pan.heavenAt(zhongShen);
+
+      return {
+        method,
+        chu: chuShen,
+        zhong: zhongShen,
+        mo: moShen
+      };
+    }
+
+    function computeLiuRen(date, dayGZ) {
+      const yuejiang = getYueJiang(date);
+      // 占時：若查「今天」用當前時辰，否則用午時作日課
+      const now = new Date();
+      const sameDay =
+        now.getFullYear() === date.getFullYear() &&
+        now.getMonth() === date.getMonth() &&
+        now.getDate() === date.getDate();
+      const hourZhi = sameDay ? hourZhiFromDate(now) : "午";
+      const hourNote = sameDay ? "此刻" : "日課用午";
+
+      const pan = buildTianPan(yuejiang.zhi, hourZhi);
+      const kes = buildSiKe(dayGZ.gan, dayGZ.zhi, pan);
+      const chuan = takeSanChuan(kes, dayGZ.gan, dayGZ.zhi, pan);
+      const jiang = assignTianJiang(pan, dayGZ.gan, hourZhi);
+      const xunkong = getXunKong(dayGZ.gan, dayGZ.zhi);
+      const ganGong = GAN_JIGONG[dayGZ.gan];
+
+      return {
+        yuejiang: `${yuejiang.name}（${yuejiang.zhi}）· ${yuejiang.jie}後`,
+        yuejiangShort: `${yuejiang.name}${yuejiang.zhi}`,
+        hourZhi,
+        hourLabel: `${hourZhi}時（${hourNote}）`,
+        xunkong: xunkong.join(""),
+        guiren: `晝${GUIREN_DAY[dayGZ.gan]} · 夜${GUIREN_NIGHT[dayGZ.gan]} · 用${jiang.isDay ? "晝" : "夜"}${jiang.guiZhi}`,
+        jigong: `日干寄${ganGong} · 日支${dayGZ.zhi}`,
+        sike: kes,
+        sanchuan: chuan,
+        chuJiang: jiang.jiangOfTian(chuan.chu),
+        zhongJiang: jiang.jiangOfTian(chuan.zhong),
+        moJiang: jiang.jiangOfTian(chuan.mo),
+        note: `取法：${chuan.method} · 月將加${hourZhi}時 · 僅供民俗參考`
+      };
+    }
+
     /* ========== 個人檔（可多人）========== */
     const PERSONS = [
       {
@@ -1486,6 +1987,7 @@
         yi: yiji.yi,
         ji: yiji.ji,
         pengzu: `${PENGZU[dayGZ.gan]}，${PENGZU[dayGZ.zhi]}`,
+        liuren: computeLiuRen(date, dayGZ),
         // for personal
         dayGZ, monthGZ, yearGZ, jianchu, yiji
       };
@@ -1560,6 +2062,38 @@
       document.getElementById("xiongshen").textContent = data.xiongshen;
       document.getElementById("fangwei").textContent = data.fangwei;
       document.getElementById("pengzu").textContent = data.pengzu;
+
+      // 大六壬
+      const lr = data.liuren;
+      document.getElementById("lrYuejiang").textContent = lr.yuejiang;
+      document.getElementById("lrZhanshi").textContent = lr.hourLabel;
+      document.getElementById("lrXunkong").textContent = lr.xunkong;
+      document.getElementById("lrGuiren").textContent = lr.guiren;
+      document.getElementById("lrJigong").textContent = lr.jigong;
+      document.getElementById("lrSike").innerHTML = lr.sike.map(k => `
+        <div class="ke">
+          <div class="kn">${k.name}</div>
+          <div class="kv">${k.upper}上<br>${k.lower}下</div>
+        </div>
+      `).join("");
+      document.getElementById("lrSanchuan").innerHTML = `
+        <div class="ch">
+          <div class="cn">初傳</div>
+          <div class="cv">${lr.sanchuan.chu}</div>
+          <div class="ct">${lr.chuJiang}</div>
+        </div>
+        <div class="ch">
+          <div class="cn">中傳</div>
+          <div class="cv">${lr.sanchuan.zhong}</div>
+          <div class="ct">${lr.zhongJiang}</div>
+        </div>
+        <div class="ch">
+          <div class="cn">末傳</div>
+          <div class="cv">${lr.sanchuan.mo}</div>
+          <div class="ct">${lr.moJiang}</div>
+        </div>
+      `;
+      document.getElementById("lrNote").textContent = lr.note;
 
       const yiList = document.getElementById("yiList");
       const jiList = document.getElementById("jiList");
