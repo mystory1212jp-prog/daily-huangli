@@ -6,7 +6,17 @@
 
 ## 線上使用
 
-部署於 GitHub Pages 後，用 Safari 開啟網站，再「分享 → 加入主畫面」。
+**網站：** https://mystory1212jp-prog.github.io/daily-huangli/
+
+**倉庫：** https://github.com/mystory1212jp-prog/daily-huangli
+
+### 加到 iPhone 主畫面
+
+1. 用 **Safari** 開啟上方網站  
+2. 點 **分享** → **加入主畫面** → 加入  
+3. 之後從桌面圖示開啟即可（第一次連網後可離線使用）
+
+詳見 [IPHONE安裝說明.md](./IPHONE安裝說明.md)
 
 ## 本機預覽
 
