@@ -477,6 +477,88 @@
       margin-top: 4px;
     }
 
+    .qimen-box {
+      grid-column: 1 / -1;
+      background: linear-gradient(180deg, #f7fbff, #eef4f0);
+      border: 1px solid rgba(40, 90, 70, 0.22);
+      border-radius: 12px;
+      padding: 14px 12px 12px;
+      text-align: left;
+    }
+
+    .qimen-box > .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .qm-board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+      margin: 10px 0 8px;
+    }
+
+    .qm-cell {
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(40, 90, 70, 0.18);
+      border-radius: 8px;
+      padding: 6px 4px;
+      text-align: center;
+      min-height: 72px;
+      position: relative;
+    }
+
+    .qm-cell.lucky {
+      border-color: rgba(31, 107, 58, 0.45);
+      background: linear-gradient(160deg, #f0faf3, #e4f3e9);
+    }
+
+    .qm-cell.center {
+      background: linear-gradient(160deg, #f8f1df, #efe2c4);
+    }
+
+    .qm-cell .gong {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    .qm-cell .gods {
+      font-size: 0.68rem;
+      color: #3d5a4a;
+      margin-top: 1px;
+    }
+
+    .qm-cell .gan-line {
+      font-family: "Noto Serif TC", serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--red-deep);
+      letter-spacing: 0.06em;
+      margin-top: 2px;
+    }
+
+    .qm-cell .gan-line .earth {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+
+    .qm-cell .star-door {
+      font-size: 0.72rem;
+      margin-top: 2px;
+      color: var(--ink);
+      letter-spacing: 0.04em;
+    }
+
+    .qm-cell .door-good {
+      color: var(--yi);
+      font-weight: 700;
+    }
+
     .yi-ji {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -863,6 +945,38 @@
             <div class="liuren-ke" id="lrSike"></div>
             <div class="liuren-chuan" id="lrSanchuan"></div>
             <div class="liuren-note" id="lrNote">以月將加時起天地盤 · 四課三傳 · 僅供參考</div>
+          </div>
+
+          <div class="liuren-box qimen-box" id="qimenBox">
+            <div class="label">奇門遁甲（時家 · 拆補）</div>
+            <div class="liuren-grid">
+              <div class="row">
+                <span class="k">用局</span>
+                <span class="v" id="qmJu">—</span>
+              </div>
+              <div class="row">
+                <span class="k">占時</span>
+                <span class="v" id="qmShi">—</span>
+              </div>
+              <div class="row">
+                <span class="k">值符</span>
+                <span class="v" id="qmZhifu">—</span>
+              </div>
+              <div class="row">
+                <span class="k">值使</span>
+                <span class="v" id="qmZhishi">—</span>
+              </div>
+              <div class="row span2">
+                <span class="k">三奇六儀 · 空亡</span>
+                <span class="v" id="qmMeta">—</span>
+              </div>
+              <div class="row span2">
+                <span class="k">吉門方位（開／休／生）</span>
+                <span class="v" id="qmLucky">—</span>
+              </div>
+            </div>
+            <div class="qm-board" id="qmBoard" aria-label="奇門九宮盤"></div>
+            <div class="liuren-note" id="qmNote">時家奇門拆補法 · 九宮飛布簡推 · 僅供民俗參考</div>
           </div>
         </div>
 
@@ -1586,6 +1700,355 @@
       };
     }
 
+    /* ========== 奇門遁甲（時家拆補法簡推）========== */
+    // 洛書九宮顯示順序（視覺 3×3）：4 9 2 / 3 5 7 / 8 1 6
+    const LUOSHU_ORDER = [4, 9, 2, 3, 5, 7, 8, 1, 6];
+    const GONG_NAME = {
+      1: "坎一", 2: "坤二", 3: "震三", 4: "巽四", 5: "中五",
+      6: "乾六", 7: "兌七", 8: "艮八", 9: "離九"
+    };
+    const GONG_DIR = {
+      1: "北", 2: "西南", 3: "東", 4: "東南", 5: "中",
+      6: "西北", 7: "西", 8: "東北", 9: "南"
+    };
+    // 地支 → 宮（寄宮）
+    const ZHI_TO_GONG = {
+      子: 1, 丑: 8, 寅: 8, 卯: 3, 辰: 4, 巳: 4,
+      午: 9, 未: 2, 申: 2, 酉: 7, 戌: 6, 亥: 6
+    };
+    // 九星（宮序 1–9 固定地盤星名）
+    const JIU_XING = ["", "天蓬", "天芮", "天沖", "天輔", "天禽", "天心", "天柱", "天任", "天英"];
+    // 八門順序（陽遁順布，跳過中五）
+    const BA_MEN = ["休", "生", "傷", "杜", "景", "死", "驚", "開"];
+    // 八門飛宮路徑（陽遁自坎起順：1-8-3-4-9-2-7-6）
+    const MEN_PATH_YANG = [1, 8, 3, 4, 9, 2, 7, 6];
+    // 陰遁自離起逆：9-6-7-2-1-8-3-4 常見為 9-2-7-6-1-8-3-4? 
+    // 標準陰遁八門逆飛：離→兌→乾→坎→艮→震→巽→坤 → 9,7,6,1,8,3,4,2
+    const MEN_PATH_YIN = [9, 7, 6, 1, 8, 3, 4, 2];
+    // 八神
+    const BA_SHEN_YANG = ["值符", "螣蛇", "太陰", "六合", "白虎", "玄武", "九地", "九天"];
+    const BA_SHEN_YIN = ["值符", "螣蛇", "太陰", "六合", "勾陳", "朱雀", "九地", "九天"];
+    const SHEN_PATH = [1, 8, 3, 4, 9, 2, 7, 6]; // 不入中五
+
+    // 節氣 → 上中下元局數 [上,中,下]
+    const YANG_JU = {
+      冬至: [1, 7, 4], 驚蟄: [1, 7, 4],
+      小寒: [2, 8, 5],
+      大寒: [3, 9, 6], 春分: [3, 9, 6],
+      雨水: [9, 6, 3],
+      清明: [4, 1, 7], 立夏: [4, 1, 7],
+      穀雨: [5, 2, 8], 小滿: [5, 2, 8],
+      立春: [8, 5, 2],
+      芒種: [6, 3, 9]
+    };
+    const YIN_JU = {
+      夏至: [9, 3, 6], 白露: [9, 3, 6],
+      小暑: [8, 2, 5],
+      大暑: [7, 1, 4], 秋分: [7, 1, 4],
+      立秋: [2, 5, 8],
+      處暑: [1, 4, 7],
+      寒露: [6, 9, 3], 立冬: [6, 9, 3],
+      霜降: [5, 8, 2], 小雪: [5, 8, 2],
+      大雪: [4, 7, 1]
+    };
+
+    // 近似節氣點（與黃曆一致）
+    const JIEQI_POINTS = [
+      [1, 5, "小寒"], [1, 20, "大寒"], [2, 4, "立春"], [2, 19, "雨水"],
+      [3, 6, "驚蟄"], [3, 21, "春分"], [4, 5, "清明"], [4, 20, "穀雨"],
+      [5, 6, "立夏"], [5, 21, "小滿"], [6, 6, "芒種"], [6, 21, "夏至"],
+      [7, 7, "小暑"], [7, 23, "大暑"], [8, 8, "立秋"], [8, 23, "處暑"],
+      [9, 8, "白露"], [9, 23, "秋分"], [10, 8, "寒露"], [10, 23, "霜降"],
+      [11, 7, "立冬"], [11, 22, "小雪"], [12, 7, "大雪"], [12, 22, "冬至"]
+    ];
+
+    function getCurrentJieQiName(date) {
+      const y = date.getFullYear();
+      let cur = "冬至";
+      const pts = [];
+      for (const yy of [y - 1, y, y + 1]) {
+        for (const [mm, dd, name] of JIEQI_POINTS) {
+          pts.push({ d: new Date(yy, mm - 1, dd, 12), name });
+        }
+      }
+      pts.sort((a, b) => a.d - b.d);
+      for (const p of pts) {
+        if (daysBetween(p.d, date) >= 0) cur = p.name;
+      }
+      return cur;
+    }
+
+    function jiaZiIndex(gan, zhi) {
+      for (let i = 0; i < 60; i++) {
+        if (TIAN_GAN[i % 10] === gan && DI_ZHI[i % 12] === zhi) return i;
+      }
+      return 0;
+    }
+
+    function getHourGanZhi(dayGan, hourZhi) {
+      // 五鼠遁
+      const start = { 甲: 0, 己: 0, 乙: 2, 庚: 2, 丙: 4, 辛: 4, 丁: 6, 壬: 6, 戊: 8, 癸: 8 }[dayGan];
+      const hi = zhiIndex(hourZhi);
+      const gan = TIAN_GAN[(start + hi) % 10];
+      return { gan, zhi: hourZhi, full: gan + hourZhi };
+    }
+
+    function getXunShouYi(hourGan, hourZhi) {
+      // 時柱旬首對應六儀：甲子戊 甲戌己 甲申庚 甲午辛 甲辰壬 甲寅癸
+      const idx = jiaZiIndex(hourGan, hourZhi);
+      const xun = Math.floor(idx / 10);
+      const yi = ["戊", "己", "庚", "辛", "壬", "癸"][xun];
+      const xunShou = ["甲子", "甲戌", "甲申", "甲午", "甲辰", "甲寅"][xun];
+      return { yi, xunShou, xun };
+    }
+
+    function getYuanFromDay(dayGan, dayZhi) {
+      // 拆補：以當日所在甲己符頭定元
+      let idx = jiaZiIndex(dayGan, dayZhi);
+      while (true) {
+        const g = TIAN_GAN[idx % 10];
+        if (g === "甲" || g === "己") break;
+        idx = (idx + 59) % 60;
+      }
+      const fuZhi = DI_ZHI[idx % 12];
+      const fuGan = TIAN_GAN[idx % 10];
+      let yuan = "下";
+      if ("子午卯酉".includes(fuZhi)) yuan = "上";
+      else if ("寅申巳亥".includes(fuZhi)) yuan = "中";
+      else yuan = "下";
+      return { yuan, fuTou: fuGan + fuZhi, fuZhi };
+    }
+
+    function getJuNumber(jieqi, yuan, isYang) {
+      const table = isYang ? YANG_JU : YIN_JU;
+      const arr = table[jieqi];
+      if (!arr) {
+        // fallback by season
+        return isYang ? 1 : 9;
+      }
+      const yi = yuan === "上" ? 0 : yuan === "中" ? 1 : 2;
+      return arr[yi];
+    }
+
+    function isYangDun(jieqi) {
+      const yangSet = new Set([
+        "冬至", "小寒", "大寒", "立春", "雨水", "驚蟄",
+        "春分", "清明", "穀雨", "立夏", "小滿", "芒種"
+      ]);
+      return yangSet.has(jieqi);
+    }
+
+    function flyGan(ju, isYang) {
+      // 三奇六儀：戊己庚辛壬癸丁丙乙
+      const seq = ["戊", "己", "庚", "辛", "壬", "癸", "丁", "丙", "乙"];
+      const ganOnGong = {}; // gong 1-9 -> gan
+      for (let i = 0; i < 9; i++) {
+        let gong;
+        if (isYang) gong = ((ju - 1 + i) % 9) + 1;
+        else gong = ((ju - 1 - i + 9 * 3) % 9) + 1;
+        ganOnGong[gong] = seq[i];
+      }
+      return ganOnGong;
+    }
+
+    function findGongOfGan(ganOnGong, gan) {
+      for (let g = 1; g <= 9; g++) {
+        if (ganOnGong[g] === gan) return g;
+      }
+      return 5;
+    }
+
+    function rotateStars(zhiFuHomeGong, targetGong, isYang) {
+      // 地盤星固定 JIU_XING[g]，值符星為 zhiFuHomeGong 之星
+      // 天盤：值符星加到 targetGong，其餘順/逆飛
+      const starOnGong = {}; // 天盤：宮 -> 星
+      const zfStar = JIU_XING[zhiFuHomeGong];
+      // 星序 1-9
+      const starOrder = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+      const homeIdx = zhiFuHomeGong - 1;
+      const targetIdx = targetGong - 1;
+      for (let g = 1; g <= 9; g++) {
+        // 原地盤 g 的星，飛到哪
+        const offset = isYang
+          ? (g - zhiFuHomeGong + 9) % 9
+          : (zhiFuHomeGong - g + 9) % 9;
+        let dest;
+        if (isYang) dest = ((targetGong - 1 + offset) % 9) + 1;
+        else dest = ((targetGong - 1 - offset + 9) % 9) + 1;
+        starOnGong[dest] = JIU_XING[g];
+      }
+      return { starOnGong, zfStar };
+    }
+
+    function rotateMen(zhiShiHomeGong, hourGong, isYang) {
+      // 八門：局數宮安休門（陽）或依陰遁，值使=旬首宮門
+      // 先布地盤門
+      const path = isYang ? MEN_PATH_YANG : MEN_PATH_YIN;
+      const menDi = {}; // gong -> men name
+      // 陽遁：休門起於局數宮在 path 上的位置... 簡化：休門安在 ju 對應
+      // 標準：陽遁一局休門在坎一，二局休在坤二... 即休門在 ju 宮（若 ju=5 寄坤2陽/艮8?）
+      // 用 path：從休門位置起
+      const menOnDi = {};
+      // 值使門：旬首（六儀）所在宮的地盤門
+      // 先按 path 從「休門落宮」排布
+      // 陽遁 N 局：休門在 N 宮（5 寄 2）
+      return null; // filled in compute
+    }
+
+    function buildDiMen(ju, isYang) {
+      const path = isYang ? MEN_PATH_YANG.slice() : MEN_PATH_YIN.slice();
+      let startGong = ju === 5 ? (isYang ? 2 : 2) : ju;
+      // 找到 path 中 startGong 的 index，使休門落在 startGong
+      let startIdx = path.indexOf(startGong);
+      if (startIdx < 0) startIdx = 0;
+      const menOnGong = {};
+      for (let i = 0; i < 8; i++) {
+        const g = path[(startIdx + i) % 8];
+        menOnGong[g] = BA_MEN[i];
+      }
+      menOnGong[5] = "中"; // 中宮無門
+      return menOnGong;
+    }
+
+    function rotateMenToHour(diMen, zhiShiMen, hourGong, isYang) {
+      // 值使門加到時支落宮
+      const path = isYang ? MEN_PATH_YANG.slice() : MEN_PATH_YIN.slice();
+      // 值使門在地盤的宮
+      let homeGong = 1;
+      for (let g = 1; g <= 9; g++) {
+        if (diMen[g] === zhiShiMen) { homeGong = g; break; }
+      }
+      if (hourGong === 5) hourGong = isYang ? 2 : 2;
+      const homeIdx = path.indexOf(homeGong);
+      const targetIdx = path.indexOf(hourGong);
+      if (homeIdx < 0 || targetIdx < 0) {
+        return { ...diMen };
+      }
+      const tianMen = { 5: "中" };
+      for (let i = 0; i < 8; i++) {
+        const srcGong = path[i];
+        const men = diMen[srcGong];
+        // offset from home
+        const off = (i - homeIdx + 8) % 8;
+        const dest = path[(targetIdx + off) % 8];
+        tianMen[dest] = men;
+      }
+      return tianMen;
+    }
+
+    function buildBaShen(zhiFuTargetGong, isYang) {
+      const gods = isYang ? BA_SHEN_YANG : BA_SHEN_YIN;
+      const path = SHEN_PATH.slice();
+      let start = zhiFuTargetGong === 5 ? 2 : zhiFuTargetGong;
+      let si = path.indexOf(start);
+      if (si < 0) si = 0;
+      const shenOnGong = { 5: "—" };
+      for (let i = 0; i < 8; i++) {
+        const g = isYang
+          ? path[(si + i) % 8]
+          : path[(si - i + 8) % 8];
+        shenOnGong[g] = gods[i];
+      }
+      return shenOnGong;
+    }
+
+    function rotateTianGan(diGan, zhiFuYiGong, hourGanGong, isYang) {
+      // 天盤干：值符六儀加於時干宮
+      const tianGan = {};
+      const seqGongs = [];
+      for (let i = 0; i < 9; i++) {
+        let g;
+        if (isYang) g = ((zhiFuYiGong - 1 + i) % 9) + 1;
+        else g = ((zhiFuYiGong - 1 - i + 9) % 9) + 1;
+        seqGongs.push(g);
+      }
+      // map: di palace -> gan, rotate so zhiFuYiGong's gan goes to hourGanGong
+      for (let g = 1; g <= 9; g++) {
+        const gan = diGan[g];
+        const off = isYang
+          ? (g - zhiFuYiGong + 9) % 9
+          : (zhiFuYiGong - g + 9) % 9;
+        const dest = isYang
+          ? ((hourGanGong - 1 + off) % 9) + 1
+          : ((hourGanGong - 1 - off + 9) % 9) + 1;
+        tianGan[dest] = gan;
+      }
+      return tianGan;
+    }
+
+    function computeQimen(date, dayGZ) {
+      const jieqi = getCurrentJieQiName(date);
+      const isYang = isYangDun(jieqi);
+      const yuanInfo = getYuanFromDay(dayGZ.gan, dayGZ.zhi);
+      const ju = getJuNumber(jieqi, yuanInfo.yuan, isYang);
+
+      const now = new Date();
+      const sameDay =
+        now.getFullYear() === date.getFullYear() &&
+        now.getMonth() === date.getMonth() &&
+        now.getDate() === date.getDate();
+      const hourZhi = sameDay ? hourZhiFromDate(now) : "午";
+      const hourNote = sameDay ? "此刻" : "日課用午";
+      const hourGZ = getHourGanZhi(dayGZ.gan, hourZhi);
+
+      const diGan = flyGan(ju, isYang);
+      const xun = getXunShouYi(hourGZ.gan, hourGZ.zhi);
+      const zhiFuYiGong = findGongOfGan(diGan, xun.yi); // 旬首六儀落宮
+      let hourGanGong = findGongOfGan(diGan, hourGZ.gan);
+      // 時干若為甲，用旬首儀
+      if (hourGZ.gan === "甲") hourGanGong = zhiFuYiGong;
+
+      const tianGan = rotateTianGan(diGan, zhiFuYiGong, hourGanGong, isYang);
+      const { starOnGong, zfStar } = rotateStars(zhiFuYiGong, hourGanGong, isYang);
+
+      const diMen = buildDiMen(ju, isYang);
+      // 中五寄宮：陽遁寄坤二、陰遁寄艮八（門盤）
+      const zfDoorGong = zhiFuYiGong === 5 ? (isYang ? 2 : 8) : zhiFuYiGong;
+      const zhiShiMen = diMen[zfDoorGong] || "休";
+      // 時支落宮
+      let hourGong = ZHI_TO_GONG[hourZhi] || 9;
+      const tianMen = rotateMenToHour(diMen, zhiShiMen, hourGong, isYang);
+      const shenOnGong = buildBaShen(hourGanGong, isYang);
+
+      // 空亡（時旬）
+      const xunkong = getXunKong(hourGZ.gan, hourGZ.zhi);
+
+      // 吉門方位
+      const luckyMen = ["開", "休", "生"];
+      const lucky = [];
+      for (const g of LUOSHU_ORDER) {
+        if (luckyMen.includes(tianMen[g])) {
+          lucky.push(`${tianMen[g]}門${GONG_DIR[g]}（${GONG_NAME[g]}）`);
+        }
+      }
+
+      // 九宮資料
+      const cells = LUOSHU_ORDER.map((g) => ({
+        gong: g,
+        name: GONG_NAME[g],
+        dir: GONG_DIR[g],
+        di: diGan[g],
+        tian: tianGan[g],
+        star: starOnGong[g] || JIU_XING[g],
+        men: tianMen[g] || "—",
+        shen: shenOnGong[g] || "—",
+        isLucky: luckyMen.includes(tianMen[g]),
+        isCenter: g === 5
+      }));
+
+      const dunLabel = isYang ? "陽遁" : "陰遁";
+      return {
+        juLabel: `${dunLabel}${ju}局 · ${yuanInfo.yuan}元 · ${jieqi}`,
+        shiLabel: `${hourGZ.full}時（${hourNote}）`,
+        zhifu: `${zfStar}（${xun.yi}）→ ${GONG_NAME[hourGanGong]}`,
+        zhishi: `${zhiShiMen}門 → ${GONG_NAME[hourGong === 5 ? 2 : hourGong]}`,
+        meta: `旬首${xun.xunShou} · 符頭${yuanInfo.fuTou} · 空亡${xunkong.join("")}`,
+        lucky: lucky.length ? lucky.join("、") : "吉門多入中宮，宜穩守",
+        cells,
+        note: `拆補法 · ${dunLabel}${ju}局 · 值符${zfStar}值使${zhiShiMen}門 · 僅供民俗參考`
+      };
+    }
+
     function computeLiuRen(date, dayGZ) {
       const yuejiang = getYueJiang(date);
       // 占時：若查「今天」用當前時辰，否則用午時作日課
@@ -1988,6 +2451,7 @@
         ji: yiji.ji,
         pengzu: `${PENGZU[dayGZ.gan]}，${PENGZU[dayGZ.zhi]}`,
         liuren: computeLiuRen(date, dayGZ),
+        qimen: computeQimen(date, dayGZ),
         // for personal
         dayGZ, monthGZ, yearGZ, jianchu, yiji
       };
@@ -2094,6 +2558,27 @@
         </div>
       `;
       document.getElementById("lrNote").textContent = lr.note;
+
+      // 奇門遁甲
+      const qm = data.qimen;
+      document.getElementById("qmJu").textContent = qm.juLabel;
+      document.getElementById("qmShi").textContent = qm.shiLabel;
+      document.getElementById("qmZhifu").textContent = qm.zhifu;
+      document.getElementById("qmZhishi").textContent = qm.zhishi;
+      document.getElementById("qmMeta").textContent = qm.meta;
+      document.getElementById("qmLucky").textContent = qm.lucky;
+      document.getElementById("qmBoard").innerHTML = qm.cells.map((c) => `
+        <div class="qm-cell${c.isLucky ? " lucky" : ""}${c.isCenter ? " center" : ""}">
+          <div class="gong">${c.name} · ${c.dir}</div>
+          <div class="gods">${c.shen}</div>
+          <div class="gan-line">${c.tian}<span class="earth">/${c.di}</span></div>
+          <div class="star-door">
+            ${c.star}
+            · <span class="${c.isLucky ? "door-good" : ""}">${c.men}${c.men !== "中" && c.men !== "—" ? "門" : ""}</span>
+          </div>
+        </div>
+      `).join("");
+      document.getElementById("qmNote").textContent = qm.note;
 
       const yiList = document.getElementById("yiList");
       const jiList = document.getElementById("jiList");
