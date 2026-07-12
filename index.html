@@ -352,6 +352,40 @@
       line-height: 1.4;
     }
 
+    .meta-item .value.zhishen-duo {
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: 1.55;
+      letter-spacing: 0.04em;
+    }
+
+    .meta-item .value.zhishen-duo .zs-line {
+      display: block;
+    }
+
+    .meta-item .value.zhishen-duo .zs-tag {
+      display: inline-block;
+      margin-left: 4px;
+      padding: 0 6px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      vertical-align: middle;
+    }
+
+    .meta-item .value.zhishen-duo .zs-tag.huang {
+      background: rgba(201, 162, 39, 0.22);
+      color: #8a6a10;
+      border: 1px solid rgba(201, 162, 39, 0.45);
+    }
+
+    .meta-item .value.zhishen-duo .zs-tag.hei {
+      background: rgba(40, 40, 50, 0.1);
+      color: #3a3a48;
+      border: 1px solid rgba(40, 40, 50, 0.22);
+    }
+
     .meta-item.full { grid-column: 1 / -1; }
 
     .liuren-box {
@@ -931,9 +965,9 @@
             <div class="label">冲煞</div>
             <div class="value" id="chongsha">—</div>
           </div>
-          <div class="meta-item">
-            <div class="label">值神</div>
-            <div class="value" id="zhishen">—</div>
+          <div class="meta-item full">
+            <div class="label">值神對照（建除 · 青龍黃黑道）</div>
+            <div class="value zhishen-duo" id="zhishen">—</div>
           </div>
           <div class="meta-item">
             <div class="label">吉神宜趨</div>
@@ -1052,6 +1086,45 @@
       "廿一", "廿二", "廿三", "廿四", "廿五", "廿六", "廿七", "廿八", "廿九", "三十"
     ];
     const JIAN_CHU = ["建", "除", "滿", "平", "定", "執", "破", "危", "成", "收", "開", "閉"];
+    /* 建除小黃道：除危定執成開為吉（黃），建滿平破收閉為凶（黑） */
+    const JIANCHU_HUANG = new Set(["除", "危", "定", "執", "成", "開"]);
+
+    /* 青龍系黃黑道十二神（順布） */
+    const QINGLONG_SHEN = [
+      "青龍", "明堂", "天刑", "朱雀", "金匱", "天德",
+      "白虎", "玉堂", "天牢", "玄武", "司命", "勾陳"
+    ];
+    /* 六黃道／六黑道 */
+    const QINGLONG_HUANG = new Set(["青龍", "明堂", "金匱", "天德", "玉堂", "司命"]);
+    /*
+     * 月建起青龍口訣：
+     * 寅申需加子，卯酉却在寅；
+     * 辰戌龍位上，巳亥午上存；
+     * 子午臨申地，丑未戌上行。
+     */
+    const QINGLONG_START = {
+      寅: "子", 申: "子",
+      卯: "寅", 酉: "寅",
+      辰: "辰", 戌: "辰",
+      巳: "午", 亥: "午",
+      子: "申", 午: "申",
+      丑: "戌", 未: "戌"
+    };
+
+    const QINGLONG_HINT = {
+      青龍: "黃道吉神 · 利有攸往、求謀可成",
+      明堂: "黃道吉神 · 利見貴人、諸事可為",
+      天刑: "黑道凶神 · 忌詞訟、刑罰、動刀兵",
+      朱雀: "黑道凶神 · 防口舌是非、文書糾紛",
+      金匱: "黃道吉神 · 利財帛、契約、納財",
+      天德: "黃道吉神 · 百事可為、化解凶煞",
+      白虎: "黑道凶神 · 忌爭鬥、血光、手術非急",
+      玉堂: "黃道吉神 · 利文事、見貴、安居",
+      天牢: "黑道凶神 · 忌監禁、拘束、糾紛",
+      玄武: "黑道凶神 · 防盜失、欺瞞、暗耗",
+      司命: "黃道吉神 · 利祈福、安神、穩事",
+      勾陳: "黑道凶神 · 忌田土爭執、糾纏不清"
+    };
     const WUXING_GAN = { 甲: "木", 乙: "木", 丙: "火", 丁: "火", 戊: "土", 己: "土", 庚: "金", 辛: "金", 壬: "水", 癸: "水" };
     const WUXING_ZHI = { 子: "水", 丑: "土", 寅: "木", 卯: "木", 辰: "土", 巳: "火", 午: "火", 未: "土", 申: "金", 酉: "金", 戌: "土", 亥: "水" };
 
@@ -1340,6 +1413,47 @@
       const monI = DI_ZHI.indexOf(monthZhi);
       const idx = (dayI - monI + 12) % 12;
       return JIAN_CHU[idx];
+    }
+
+    /** 青龍系黃黑道十二神（依月建起青龍，順布至日支） */
+    function getQingLongShen(dayZhi, monthZhi) {
+      const startZhi = QINGLONG_START[monthZhi] || "子";
+      const dayI = DI_ZHI.indexOf(dayZhi);
+      const startI = DI_ZHI.indexOf(startZhi);
+      const idx = (dayI - startI + 12) % 12;
+      const name = QINGLONG_SHEN[idx];
+      const isHuang = QINGLONG_HUANG.has(name);
+      return {
+        name,
+        isHuang,
+        dao: isHuang ? "黃道" : "黑道",
+        startZhi,
+        hint: QINGLONG_HINT[name] || "",
+        idx
+      };
+    }
+
+    /** 建除是否屬小黃道 */
+    function getJianChuDao(jianchu) {
+      const isHuang = JIANCHU_HUANG.has(jianchu);
+      return { isHuang, dao: isHuang ? "小黃道" : "小黑道" };
+    }
+
+    function formatZhishenHtml(jianchu, qinglong) {
+      const jcDao = getJianChuDao(jianchu);
+      const jcTag = jcDao.isHuang
+        ? `<span class="zs-tag huang">${jcDao.dao}</span>`
+        : `<span class="zs-tag hei">${jcDao.dao}</span>`;
+      const qlTag = qinglong.isHuang
+        ? `<span class="zs-tag huang">${qinglong.dao}</span>`
+        : `<span class="zs-tag hei">${qinglong.dao}</span>`;
+      return (
+        `<span class="zs-line">建除：${jianchu}日 ${jcTag}</span>` +
+        `<span class="zs-line">青龍系：${qinglong.name} ${qlTag}</span>` +
+        `<span class="zs-line" style="font-weight:500;color:var(--muted);font-size:0.8rem;margin-top:2px;">` +
+        `月建起青龍於「${qinglong.startZhi}」· ${qinglong.hint}` +
+        `</span>`
+      );
     }
 
     function getConstellation(month, day) {
@@ -2247,18 +2361,33 @@
     }
 
     function buildTijiTip(person, ctx) {
-      const { jianchu, yiji, liuren, qimen, rel, dayGZ, pianCai } = ctx;
+      const { jianchu, yiji, liuren, qimen, rel, dayGZ, pianCai, qinglong } = ctx;
       const hlPart = (() => {
+        const ql = qinglong
+          ? `，青龍系「${qinglong.name}」屬${qinglong.dao}`
+          : "";
         if (["成", "開", "滿"].includes(jianchu)) {
-          return `黃曆「${jianchu}日」氣機偏開，宜主動推進、見好就收`;
+          return `黃曆「${jianchu}日」氣機偏開${ql}，宜主動推進、見好就收`;
         }
         if (["破", "閉", "危"].includes(jianchu)) {
-          return `黃曆「${jianchu}日」宜守不宜攻，少開新局、少動大財`;
+          return `黃曆「${jianchu}日」宜守不宜攻${ql}，少開新局、少動大財`;
         }
         if (jianchu === "收" || jianchu === "定") {
-          return `黃曆「${jianchu}日」適合收斂成果、把細節做實`;
+          return `黃曆「${jianchu}日」適合收斂成果${ql}，把細節做實`;
         }
-        return `黃曆「${jianchu}日」行事求穩，有把握再出手`;
+        return `黃曆「${jianchu}日」行事求穩${ql}，有把握再出手`;
+      })();
+
+      const qlAdvice = (() => {
+        if (!qinglong) return "";
+        if (qinglong.isHuang) {
+          if (qinglong.name === "金匱") return "值金匱利財帛契約，可談錢但勿貪。";
+          if (qinglong.name === "青龍" || qinglong.name === "明堂") return "值黃道吉神，大事可擇吉時啟動。";
+          return "值黃道日，趨吉可為、仍忌衝動。";
+        }
+        if (qinglong.name === "白虎" || qinglong.name === "天刑") return "值黑道刑虎，避爭鬥血光與硬碰。";
+        if (qinglong.name === "朱雀" || qinglong.name === "玄武") return "值朱雀玄武，慎口舌防欺瞞失物。";
+        return "值黑道日，守成為上、少開凶事。";
       })();
 
       const yiHint = (yiji.yi || []).find(x =>
@@ -2304,7 +2433,7 @@
       const avoid = jiHint ? `忌「${jiHint}」` : "忌意氣用事";
       const go = yiHint ? `可順「${yiHint}」之象` : "可做可控範圍內的推進";
 
-      return `${hlPart}；${lrPart}；${qmPart}。${relTip}${go}，${avoid}；${caiTip}，${colorTip}。`;
+      return `${hlPart}；${lrPart}；${qmPart}。${qlAdvice}${relTip}${go}，${avoid}；${caiTip}，${colorTip}。`;
     }
 
     function computePersonalFortune(date, almanacCtx, person) {
@@ -2496,7 +2625,8 @@
       const lunarShort = (L.isLeap ? "閏" : "") + LUNAR_MONTHS[L.month - 1] + "月" + LUNAR_DAYS[L.day - 1];
 
       const tijiTip = buildTijiTip(person, {
-        jianchu, yiji, liuren, qimen, rel, dayGZ, pianCai
+        jianchu, yiji, liuren, qimen, rel, dayGZ, pianCai,
+        qinglong: almanacCtx.qinglong
       });
 
       return {
@@ -2553,6 +2683,7 @@
       const monthGZ = getMonthGanZhi(y, m);
       const dayGZ = getDayGanZhi(date);
       const jianchu = getJianChu(dayGZ.zhi, monthGZ.zhi);
+      const qinglong = getQingLongShen(dayGZ.zhi, monthGZ.zhi);
       const yiji = JIANCHU_YIJI[jianchu];
       const seed = y * 10000 + m * 100 + d + dayGZ.gan.charCodeAt(0);
 
@@ -2572,7 +2703,9 @@
         wuxing: `${WUXING_GAN[dayGZ.gan]}${WUXING_ZHI[dayGZ.zhi]}之日`,
         nayin: getNaYin(dayGZ.full),
         chongsha: `冲${ZHI_TO_XIAO[CHONG_MAP[dayGZ.zhi]]}(${CHONG_MAP[dayGZ.zhi]}) 煞${SHA_MAP[dayGZ.zhi]}`,
-        zhishen: `${jianchu}日`,
+        zhishen: formatZhishenHtml(jianchu, qinglong),
+        zhishenPlain: `建除${jianchu}日 · 青龍系${qinglong.name}（${qinglong.dao}）`,
+        qinglong,
         jishen: pickStable(JISHEN_LIST, seed, 3).join("、"),
         xiongshen: pickStable(XIONGSHEN_LIST, seed + 7, 3).join("、"),
         fangwei: getDirections(dayGZ.gan),
@@ -2582,7 +2715,7 @@
         liuren: computeLiuRen(date, dayGZ),
         qimen: computeQimen(date, dayGZ),
         // for personal
-        dayGZ, monthGZ, yearGZ, jianchu, yiji
+        dayGZ, monthGZ, yearGZ, jianchu, yiji, qinglong
       };
       base.personals = PERSONS.map((person) => computePersonalFortune(date, base, person));
       return base;
@@ -2654,7 +2787,7 @@
       document.getElementById("wuxing").textContent = data.wuxing;
       document.getElementById("nayin").textContent = data.nayin;
       document.getElementById("chongsha").textContent = data.chongsha;
-      document.getElementById("zhishen").textContent = data.zhishen;
+      document.getElementById("zhishen").innerHTML = data.zhishen;
       document.getElementById("jishen").textContent = data.jishen;
       document.getElementById("xiongshen").textContent = data.xiongshen;
       document.getElementById("fangwei").textContent = data.fangwei;
