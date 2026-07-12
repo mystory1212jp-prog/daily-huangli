@@ -399,6 +399,126 @@
 
     .meta-item.full { grid-column: 1 / -1; min-height: auto; }
 
+    /* ===== 每日分析 · 今日行動 ===== */
+    .daily-analysis {
+      margin-bottom: 18px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(31, 107, 58, 0.28);
+      background: linear-gradient(165deg, #f3faf5 0%, #fffdf8 55%, #f7f0e0 100%);
+      box-shadow: 0 6px 18px rgba(30, 60, 40, 0.08);
+    }
+
+    .daily-analysis .da-head {
+      background: linear-gradient(120deg, #1a4d32 0%, #2d6b4a 50%, #3d7a55 100%);
+      color: #e8f5ec;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .daily-analysis .da-head h3 {
+      font-family: "Noto Serif TC", serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      margin: 0;
+    }
+
+    .daily-analysis .da-mode {
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(232, 245, 236, 0.35);
+    }
+
+    .daily-analysis .da-body { padding: 12px 12px 14px; }
+
+    .da-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .da-step {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 8px;
+      align-items: start;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(31, 107, 58, 0.14);
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+
+    .da-step .n {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #3d8a5a, #1f6b3a);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Noto Serif TC", serif;
+    }
+
+    .da-step .t {
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      margin-bottom: 2px;
+    }
+
+    .da-step .c {
+      font-size: 0.9rem;
+      line-height: 1.55;
+      color: var(--ink);
+      letter-spacing: 0.02em;
+    }
+
+    .da-actions {
+      border-radius: 12px;
+      padding: 12px;
+      background: linear-gradient(135deg, rgba(201, 162, 39, 0.14), rgba(31, 107, 58, 0.1));
+      border: 1px solid rgba(201, 162, 39, 0.35);
+    }
+
+    .da-actions h4 {
+      font-family: "Noto Serif TC", serif;
+      font-size: 0.95rem;
+      letter-spacing: 0.15em;
+      color: var(--red-deep);
+      margin: 0 0 8px;
+      text-align: center;
+    }
+
+    .da-actions ol {
+      margin: 0;
+      padding-left: 1.25em;
+      font-size: 0.9rem;
+      line-height: 1.75;
+      color: var(--ink);
+    }
+
+    .da-actions ol li { margin-bottom: 2px; }
+
+    .da-actions .da-foot {
+      margin-top: 8px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+
     .liuren-box {
       grid-column: 1 / -1;
       background: linear-gradient(180deg, #fffdf7, var(--paper-dark));
@@ -962,6 +1082,21 @@
       </div>
 
       <div class="body">
+        <section class="daily-analysis" id="dailyAnalysis" aria-label="每日分析與今日行動">
+          <div class="da-head">
+            <h3>每日分析</h3>
+            <span class="da-mode" id="daMode">—</span>
+          </div>
+          <div class="da-body">
+            <div class="da-steps" id="daSteps"></div>
+            <div class="da-actions">
+              <h4>今日行動方案</h4>
+              <ol id="daActions"></ol>
+              <div class="da-foot">依值神 → 宜忌 → 奇門 → 六壬 四步歸納 · 僅供民俗參考</div>
+            </div>
+          </div>
+        </section>
+
         <div class="section-title">日辰要覽</div>
         <div class="meta-grid">
           <div class="meta-item">
@@ -2381,6 +2516,172 @@
       return Number(person.birthSolar.replace(/-/g, ""));
     }
 
+    /** 從奇門 lucky 字串解析第一個吉方方向 */
+    function parseQimenFirstDir(luckyText) {
+      if (!luckyText) return null;
+      const m = String(luckyText).match(/(開|休|生)門(東南|東北|西南|西北|東|南|西|北)/);
+      if (m) return { men: m[1] + "門", dir: m[2] };
+      const m2 = String(luckyText).match(/(東南|東北|西南|西北|東|南|西|北)/);
+      return m2 ? { men: "吉門", dir: m2[1] } : null;
+    }
+
+    /**
+     * 每日分析：1值神 2宜忌 3奇門吉方 4六壬趨吉 → 具體行動方案
+     */
+    function computeDailyAnalysis(ctx) {
+      const { jianchu, qinglong, yiji, liuren, qimen, fangwei, dayGZ } = ctx;
+      const jcDao = getJianChuDao(jianchu);
+      const ql = qinglong || { name: "—", dao: "—", isHuang: false, hint: "" };
+
+      // —— 1. 值神 ——
+      const step1 = {
+        title: "值神",
+        content: `建除「${jianchu}日」屬${jcDao.dao}；青龍系「${ql.name}」屬${ql.dao}${ql.hint ? `（${ql.hint.split("·")[0].trim()}）` : ""}。`
+      };
+      const zhiShenGood = jcDao.isHuang || ql.isHuang;
+      const zhiShenBad = (!jcDao.isHuang && !ql.isHuang) || ["破", "閉"].includes(jianchu) ||
+        ["白虎", "天刑", "天牢"].includes(ql.name);
+
+      // —— 2. 宜忌重點 ——
+      const yiKey = (yiji.yi || []).filter(x => !["畋獵", "結網", "取漁", "斷蟻", "塞穴", "壞垣"].includes(x)).slice(0, 3);
+      const jiKey = (yiji.ji || []).filter(x => x !== "諸事不宜").slice(0, 3);
+      const yiFocus = yiKey.length ? yiKey.join("、") : "穩事、整理、守成";
+      const jiFocus = jiKey.length ? jiKey.join("、") : "衝動決策、硬碰爭執";
+      const step2 = {
+        title: "宜忌重點",
+        content: `宜重點：${yiFocus}。忌重點：${jiFocus}。`
+      };
+
+      // —— 3. 奇門吉方 ——
+      const qmDir = parseQimenFirstDir(qimen && qimen.lucky);
+      const luckyDir = (qmDir && qmDir.dir) || "東";
+      const luckyMen = (qmDir && qmDir.men) || "吉門";
+      const shaDir = SHA_MAP[dayGZ.zhi] || "北";
+      const step3 = {
+        title: "奇門吉方",
+        content: qimen && qimen.lucky
+          ? `吉門方位：${qimen.lucky}。優先取「${luckyMen}${luckyDir}」行動；冲煞方在「${shaDir}」，宜避。`
+          : `以方位參考為輔；冲煞方「${shaDir}」宜避。`
+      };
+
+      // —— 4. 六壬趨吉 ——
+      const chuan = liuren && liuren.sanchuan;
+      let lrTone = "穩";
+      let lrText = "六壬宜穩步推進，不抄近路。";
+      if (chuan) {
+        if (chuan.method.includes("伏吟")) {
+          lrTone = "守";
+          lrText = `六壬「伏吟」，心思易打轉：今日決策可暫緩，先安神再動。三傳${chuan.chu}→${chuan.zhong}→${chuan.mo}。`;
+        } else if (chuan.method.includes("返吟")) {
+          lrTone = "慎";
+          lrText = `六壬「返吟」多反覆：合約、口頭承諾、路線皆宜再確認。三傳${chuan.chu}→${chuan.zhong}→${chuan.mo}。`;
+        } else if (chuan.method.includes("重審") || chuan.method.includes("元首")) {
+          lrTone = "進";
+          lrText = `六壬「${chuan.method}」有動象：可順初傳「${chuan.chu}」之勢推進，但留退路。末傳歸「${chuan.mo}」。`;
+        } else {
+          lrTone = "穩";
+          lrText = `六壬三傳${chuan.chu}→${chuan.zhong}→${chuan.mo}（${chuan.method}），步步為營最穩。`;
+        }
+      }
+      const step4 = { title: "六壬趨吉重點", content: lrText };
+
+      // —— 歸納模式 ——
+      let mode = "穩中求進";
+      let modeKey = "steady";
+      if (zhiShenBad || lrTone === "守" || ["破", "閉", "危"].includes(jianchu)) {
+        mode = "宜守低調";
+        modeKey = "guard";
+      } else if (zhiShenGood && (lrTone === "進" || ["成", "開", "滿", "定"].includes(jianchu)) && ql.isHuang) {
+        mode = "可積極趨吉";
+        modeKey = "open";
+      } else if (lrTone === "慎" || !ql.isHuang) {
+        mode = "審慎行事";
+        modeKey = "careful";
+      }
+
+      // —— 具體行動方案 ——
+      const actions = [];
+      if (modeKey === "open") {
+        actions.push(`往【${luckyDir}】方向放一杯清水（開流納氣，象徵事情能走得通）`);
+        actions.push(`面朝【${luckyDir}】做 3 次意向呼吸：吸氣想「我願意成事」，呼氣想「阻滯散去」`);
+        actions.push(`主動推進宜事重點「${yiFocus.split("、")[0]}」，今日有機會就出手、見好就收`);
+        actions.push(`避開【${shaDir}】方久留與爭執；忌事「${jiFocus.split("、")[0]}」能延則延`);
+      } else if (modeKey === "guard") {
+        actions.push(`低調休息為上：減少社交應酬與高風險決策，能推明天的就推明天`);
+        actions.push(`做 5 分鐘意向呼吸（吸4秒－停2秒－呼6秒），把心從焦慮裡拉回身體`);
+        actions.push(`僅在【${luckyDir}】方向輕放清水或開窗通風即可，不必張揚作法`);
+        actions.push(`堅守忌事底線：今日不碰「${jiFocus}」；口舌、爭鬥、大額支出一律暫停`);
+      } else if (modeKey === "careful") {
+        actions.push(`往【${luckyDir}】方向放水，心中默念「流通不滯、小心謹慎」`);
+        actions.push(`做 3 輪意向呼吸後再回覆重要訊息，避免情緒性發言`);
+        actions.push(`可做宜事「${yiFocus.split("、")[0]}」，但採小步驗證、不一次梭哈`);
+        actions.push(`黑道／返吟日特徵：合約與承諾多看一眼；避開【${shaDir}】方硬碰`);
+      } else {
+        actions.push(`往【${luckyDir}】方向放一杯清水，象徵今日氣機順暢`);
+        actions.push(`做 3 次意向呼吸，默想今日唯一最重要的一件事`);
+        actions.push(`依宜忌穩步執行「${yiFocus.split("、")[0]}」，不貪多、不硬衝`);
+        actions.push(`避【${shaDir}】方是非；忌「${jiFocus.split("、")[0]}」，守住節奏`);
+      }
+
+      // 方位參考補一句
+      if (fangwei) {
+        actions.push(`可參考喜神／財神方位：${fangwei}（洽公、收款時朝吉方坐）`);
+      }
+
+      return {
+        mode,
+        modeKey,
+        steps: [step1, step2, step3, step4],
+        actions: actions.slice(0, 5),
+        luckyDir,
+        luckyMen,
+        shaDir,
+        yiFocus,
+        jiFocus,
+        jianchu,
+        qinglongName: ql.name,
+        qinglongDao: ql.dao
+      };
+    }
+
+    /** 個人化今日行動（結合日分析 + 本命冲合） */
+    function buildPersonalDayActions(person, daily, rel, scores) {
+      const dir = daily.luckyDir || "東";
+      const sha = daily.shaDir || "北";
+      const isFemale = person.gender === "female";
+      const list = [];
+
+      // 依本命關係微調
+      if (rel.key === "冲" || rel.key === "害") {
+        list.push(`【今日行動】本命${rel.key === "冲" ? "相冲" : "六害"}：以「低調休息」為主，大事可緩一日`);
+        list.push(`往【${dir}】方向放水即可，不做張揚儀式；避開【${sha}】方爭執`);
+        list.push(`意向呼吸加長到 5 分鐘，先安情緒再回覆${isFemale ? "感情與工作" : "公事與人情"}訊息`);
+      } else if (rel.key === "合" || rel.key === "三合") {
+        list.push(`【今日行動】本命相合：可順勢往【${dir}】方洽談、請託或連繫貴人`);
+        list.push(`面朝【${dir}】做 3 次意向呼吸後，主動完成一件「宜：${daily.yiFocus.split("、")[0]}」`);
+        list.push(`合日仍忌衝動：不碰「${daily.jiFocus.split("、")[0]}」，偏財${scores.pianCai >= 70 ? "可小試、勿梭哈" : "宜守正財"}`);
+      } else if (daily.modeKey === "guard") {
+        list.push(`【今日行動】${person.xiao}命今日宜守：低調休息、少開新局`);
+        list.push(`往【${dir}】輕放清水 + 意向呼吸 5 分鐘；穿${person.luckyColors.slice(0, 2).join("、")}色助運`);
+        list.push(`避開【${sha}】方；忌「${daily.jiFocus.split("、")[0]}」`);
+      } else if (daily.modeKey === "open") {
+        list.push(`【今日行動】${person.xiao}命可積極趨吉：往【${dir}】放水開流`);
+        list.push(`面朝【${dir}】意向呼吸 3 次，推進「${daily.yiFocus.split("、")[0]}」`);
+        list.push(`見好就收；避【${sha}】方口舌；${isFemale ? "感情表達宜溫柔明確" : "簡報提案宜一次說清楚"}`);
+      } else {
+        list.push(`【今日行動】往【${dir}】放水、做 3 次意向呼吸，穩中求進`);
+        list.push(`執行宜事「${daily.yiFocus.split("、")[0]}」；低調處理忌事「${daily.jiFocus.split("、")[0]}」`);
+        list.push(`穿${person.luckyColors.slice(0, 2).join("、")}；避【${sha}】方硬碰`);
+      }
+
+      // 偏財／健康微調一句
+      if (scores.pianCai < 45) list.push(`偏財弱：今日不跟風投資、不借貸作保`);
+      else if (scores.pianCai >= 75) list.push(`偏財有氣：只做小額可控嘗試，設停損`);
+      if (scores.health < 50) list.push(`體力偏弱：早睡、清淡飲食，運動改散步即可`);
+
+      return list.slice(0, 4);
+    }
+
     function buildTijiTip(person, ctx) {
       const { jianchu, yiji, liuren, qimen, rel, dayGZ, pianCai, qinglong } = ctx;
       const hlPart = (() => {
@@ -2625,6 +2926,16 @@
       if (ji.length === 0) ji.push("無特別大忌，仍避免意氣與僥倖");
       if (notes.length === 0) notes.push("保持平常心，按計劃穩步執行即可。");
 
+      // 個人今日行動 → 併入「今日注意」最前方
+      const daily = almanacCtx.dailyAnalysis;
+      const personalActions = daily
+        ? buildPersonalDayActions(person, daily, rel, {
+            pianCai, health, career, wealth,
+            social: isFemale ? love : social
+          })
+        : [];
+      const notesMerged = uniq([...personalActions, ...notes]).slice(0, 8);
+
       const level = luckLevel(total);
       const who = `${person.birthYearGZ.full}${person.xiao}`;
       let summary = "";
@@ -2679,7 +2990,8 @@
             ],
         yi,
         ji,
-        notes: uniq(notes).slice(0, 5),
+        notes: notesMerged,
+        personalActions,
         summary,
         tijiTip,
         chips: [
@@ -2738,6 +3050,16 @@
         // for personal
         dayGZ, monthGZ, yearGZ, jianchu, yiji, qinglong
       };
+      // 每日分析（值神→宜忌→奇門→六壬→行動）須在個人運勢之前
+      base.dailyAnalysis = computeDailyAnalysis({
+        jianchu,
+        qinglong,
+        yiji,
+        liuren: base.liuren,
+        qimen: base.qimen,
+        fangwei: base.fangwei,
+        dayGZ
+      });
       base.personals = PERSONS.map((person) => computePersonalFortune(date, base, person));
       return base;
     }
@@ -2816,6 +3138,21 @@
       document.getElementById("xiongshen").textContent = data.xiongshen;
       document.getElementById("fangwei").textContent = data.fangwei;
       document.getElementById("pengzu").textContent = data.pengzu;
+
+      // 每日分析 + 今日行動（置於日辰要覽上方）
+      const da = data.dailyAnalysis;
+      document.getElementById("daMode").textContent = da.mode;
+      document.getElementById("daSteps").innerHTML = da.steps.map((s, i) => `
+        <div class="da-step">
+          <div class="n">${i + 1}</div>
+          <div>
+            <div class="t">${s.title}</div>
+            <div class="c">${s.content}</div>
+          </div>
+        </div>
+      `).join("");
+      document.getElementById("daActions").innerHTML =
+        da.actions.map(a => `<li>${a}</li>`).join("");
 
       // 大六壬
       const lr = data.liuren;
