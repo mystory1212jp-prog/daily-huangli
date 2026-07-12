@@ -329,6 +329,10 @@
     }
 
     .meta-item {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      min-height: 84px;
       background: linear-gradient(180deg, #fffdf7, var(--paper-dark));
       border: 1px solid rgba(201, 162, 39, 0.28);
       border-radius: 12px;
@@ -341,52 +345,59 @@
       color: var(--muted);
       letter-spacing: 0.15em;
       margin-bottom: 6px;
+      flex-shrink: 0;
     }
 
     .meta-item .value {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       font-family: "Noto Serif TC", serif;
       font-size: 1.05rem;
       font-weight: 700;
       color: var(--red-deep);
       letter-spacing: 0.08em;
       line-height: 1.4;
+      word-break: break-word;
     }
 
-    .meta-item .value.zhishen-duo {
-      font-size: 0.88rem;
-      font-weight: 600;
-      line-height: 1.55;
-      letter-spacing: 0.04em;
-    }
-
-    .meta-item .value.zhishen-duo .zs-line {
-      display: block;
-    }
-
-    .meta-item .value.zhishen-duo .zs-tag {
+    .meta-item .zs-tag {
       display: inline-block;
-      margin-left: 4px;
-      padding: 0 6px;
+      margin-top: 5px;
+      padding: 2px 8px;
       border-radius: 999px;
       font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: 0.06em;
-      vertical-align: middle;
+      font-family: "Noto Sans TC", sans-serif;
     }
 
-    .meta-item .value.zhishen-duo .zs-tag.huang {
+    .meta-item .zs-tag.huang {
       background: rgba(201, 162, 39, 0.22);
       color: #8a6a10;
       border: 1px solid rgba(201, 162, 39, 0.45);
     }
 
-    .meta-item .value.zhishen-duo .zs-tag.hei {
+    .meta-item .zs-tag.hei {
       background: rgba(40, 40, 50, 0.1);
       color: #3a3a48;
       border: 1px solid rgba(40, 40, 50, 0.22);
     }
 
-    .meta-item.full { grid-column: 1 / -1; }
+    .meta-item .zs-hint {
+      margin-top: 4px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+      line-height: 1.35;
+      font-family: "Noto Sans TC", sans-serif;
+      max-width: 100%;
+    }
+
+    .meta-item.full { grid-column: 1 / -1; min-height: auto; }
 
     .liuren-box {
       grid-column: 1 / -1;
@@ -965,9 +976,17 @@
             <div class="label">冲煞</div>
             <div class="value" id="chongsha">—</div>
           </div>
-          <div class="meta-item full">
-            <div class="label">值神對照（建除 · 青龍黃黑道）</div>
-            <div class="value zhishen-duo" id="zhishen">—</div>
+          <div class="meta-item">
+            <div class="label">建除值神</div>
+            <div class="value" id="zhishenJianchu">—</div>
+          </div>
+          <div class="meta-item">
+            <div class="label">青龍值神</div>
+            <div class="value" id="zhishenQinglong">—</div>
+          </div>
+          <div class="meta-item">
+            <div class="label">黃黑道</div>
+            <div class="value" id="zhishenDao">—</div>
           </div>
           <div class="meta-item">
             <div class="label">吉神宜趨</div>
@@ -1439,21 +1458,23 @@
       return { isHuang, dao: isHuang ? "小黃道" : "小黑道" };
     }
 
-    function formatZhishenHtml(jianchu, qinglong) {
+    function formatZhishenParts(jianchu, qinglong) {
       const jcDao = getJianChuDao(jianchu);
-      const jcTag = jcDao.isHuang
-        ? `<span class="zs-tag huang">${jcDao.dao}</span>`
-        : `<span class="zs-tag hei">${jcDao.dao}</span>`;
-      const qlTag = qinglong.isHuang
-        ? `<span class="zs-tag huang">${qinglong.dao}</span>`
-        : `<span class="zs-tag hei">${qinglong.dao}</span>`;
-      return (
-        `<span class="zs-line">建除：${jianchu}日 ${jcTag}</span>` +
-        `<span class="zs-line">青龍系：${qinglong.name} ${qlTag}</span>` +
-        `<span class="zs-line" style="font-weight:500;color:var(--muted);font-size:0.8rem;margin-top:2px;">` +
-        `月建起青龍於「${qinglong.startZhi}」· ${qinglong.hint}` +
-        `</span>`
-      );
+      const jcTagClass = jcDao.isHuang ? "huang" : "hei";
+      const qlTagClass = qinglong.isHuang ? "huang" : "hei";
+      // 提示取前半句（頓號前）避免格子過擠
+      const hintShort = (qinglong.hint || "").split("·")[0].trim();
+      return {
+        jianchuHtml:
+          `${jianchu}日` +
+          `<span class="zs-tag ${jcTagClass}">${jcDao.dao}</span>`,
+        qinglongHtml:
+          qinglong.name +
+          (hintShort ? `<div class="zs-hint">${hintShort}</div>` : ""),
+        daoHtml:
+          `<span class="zs-tag ${qlTagClass}">${qinglong.dao}</span>` +
+          `<div class="zs-hint">起於${qinglong.startZhi}支</div>`
+      };
     }
 
     function getConstellation(month, day) {
@@ -2703,7 +2724,7 @@
         wuxing: `${WUXING_GAN[dayGZ.gan]}${WUXING_ZHI[dayGZ.zhi]}之日`,
         nayin: getNaYin(dayGZ.full),
         chongsha: `冲${ZHI_TO_XIAO[CHONG_MAP[dayGZ.zhi]]}(${CHONG_MAP[dayGZ.zhi]}) 煞${SHA_MAP[dayGZ.zhi]}`,
-        zhishen: formatZhishenHtml(jianchu, qinglong),
+        zhishenParts: formatZhishenParts(jianchu, qinglong),
         zhishenPlain: `建除${jianchu}日 · 青龍系${qinglong.name}（${qinglong.dao}）`,
         qinglong,
         jishen: pickStable(JISHEN_LIST, seed, 3).join("、"),
@@ -2787,7 +2808,10 @@
       document.getElementById("wuxing").textContent = data.wuxing;
       document.getElementById("nayin").textContent = data.nayin;
       document.getElementById("chongsha").textContent = data.chongsha;
-      document.getElementById("zhishen").innerHTML = data.zhishen;
+      const zs = data.zhishenParts;
+      document.getElementById("zhishenJianchu").innerHTML = zs.jianchuHtml;
+      document.getElementById("zhishenQinglong").innerHTML = zs.qinglongHtml;
+      document.getElementById("zhishenDao").innerHTML = zs.daoHtml;
       document.getElementById("jishen").textContent = data.jishen;
       document.getElementById("xiongshen").textContent = data.xiongshen;
       document.getElementById("fangwei").textContent = data.fangwei;
