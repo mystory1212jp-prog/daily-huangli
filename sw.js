@@ -1,12 +1,13 @@
 /* 每日黃曆 Service Worker — 離線可開啟 */
-const CACHE = "huangli-v9";
+const CACHE = "huangli-v10";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./icons/apple-touch-icon.png",
   "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icons/icon-512.png",
+  "./huangji-yuanwen.json"
 ];
 
 self.addEventListener("install", (event) => {
