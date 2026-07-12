@@ -1269,14 +1269,14 @@
           </div>
 
           <div class="liuren-box qimen-box" id="qimenBox">
-            <div class="label">奇門遁甲（時家 · 拆補）</div>
+            <div class="label">奇門遁甲（日家 · 拆補）</div>
             <div class="liuren-grid">
               <div class="row">
                 <span class="k">用局</span>
                 <span class="v" id="qmJu">—</span>
               </div>
               <div class="row">
-                <span class="k">占時</span>
+                <span class="k">用日</span>
                 <span class="v" id="qmShi">—</span>
               </div>
               <div class="row">
@@ -1297,7 +1297,7 @@
               </div>
             </div>
             <div class="qm-board" id="qmBoard" aria-label="奇門九宮盤"></div>
-            <div class="liuren-note" id="qmNote">時家奇門拆補法 · 九宮飛布簡推 · 僅供民俗參考</div>
+            <div class="liuren-note" id="qmNote">日家奇門拆補法 · 以日干支起盤 · 僅供民俗參考</div>
           </div>
         </div>
 
@@ -2103,7 +2103,7 @@
       };
     }
 
-    /* ========== 奇門遁甲（時家拆補法簡推）========== */
+    /* ========== 奇門遁甲（日家拆補法簡推）========== */
     // 洛書九宮顯示順序（視覺 3×3）：4 9 2 / 3 5 7 / 8 1 6
     const LUOSHU_ORDER = [4, 9, 2, 3, 5, 7, 8, 1, 6];
     const GONG_NAME = {
@@ -2380,41 +2380,38 @@
     }
 
     function computeQimen(date, dayGZ) {
+      // 日家奇門：以「日干支」起盤（非時辰）
+      // 定局仍依節氣＋符頭三元；值符加日干、值使加日支；旬首／空亡取日柱
       const jieqi = getCurrentJieQiName(date);
       const isYang = isYangDun(jieqi);
       const yuanInfo = getYuanFromDay(dayGZ.gan, dayGZ.zhi);
       const ju = getJuNumber(jieqi, yuanInfo.yuan, isYang);
 
-      const now = new Date();
-      const sameDay =
-        now.getFullYear() === date.getFullYear() &&
-        now.getMonth() === date.getMonth() &&
-        now.getDate() === date.getDate();
-      const hourZhi = sameDay ? hourZhiFromDate(now) : "午";
-      const hourNote = sameDay ? "此刻" : "日課用午";
-      const hourGZ = getHourGanZhi(dayGZ.gan, hourZhi);
-
       const diGan = flyGan(ju, isYang);
-      const xun = getXunShouYi(hourGZ.gan, hourGZ.zhi);
-      const zhiFuYiGong = findGongOfGan(diGan, xun.yi); // 旬首六儀落宮
-      let hourGanGong = findGongOfGan(diGan, hourGZ.gan);
-      // 時干若為甲，用旬首儀
-      if (hourGZ.gan === "甲") hourGanGong = zhiFuYiGong;
+      // 日柱旬首 → 六儀（值符星之宮）
+      const xun = getXunShouYi(dayGZ.gan, dayGZ.zhi);
+      const zhiFuYiGong = findGongOfGan(diGan, xun.yi);
+      // 值符加於「日干」落宮（甲日用旬首儀）；中五寄坤二（陽）／艮八（陰）
+      const jiGong5 = isYang ? 2 : 8;
+      let dayGanGong = findGongOfGan(diGan, dayGZ.gan);
+      if (dayGZ.gan === "甲") dayGanGong = zhiFuYiGong;
+      if (dayGanGong === 5) dayGanGong = jiGong5;
+      const zhiFuHome = zhiFuYiGong === 5 ? jiGong5 : zhiFuYiGong;
 
-      const tianGan = rotateTianGan(diGan, zhiFuYiGong, hourGanGong, isYang);
-      const { starOnGong, zfStar } = rotateStars(zhiFuYiGong, hourGanGong, isYang);
+      const tianGan = rotateTianGan(diGan, zhiFuHome, dayGanGong, isYang);
+      const { starOnGong, zfStar } = rotateStars(zhiFuHome, dayGanGong, isYang);
 
       const diMen = buildDiMen(ju, isYang);
-      // 中五寄宮：陽遁寄坤二、陰遁寄艮八（門盤）
-      const zfDoorGong = zhiFuYiGong === 5 ? (isYang ? 2 : 8) : zhiFuYiGong;
+      const zfDoorGong = zhiFuHome;
       const zhiShiMen = diMen[zfDoorGong] || "休";
-      // 時支落宮
-      let hourGong = ZHI_TO_GONG[hourZhi] || 9;
-      const tianMen = rotateMenToHour(diMen, zhiShiMen, hourGong, isYang);
-      const shenOnGong = buildBaShen(hourGanGong, isYang);
+      // 值使加於「日支」落宮
+      let dayZhiGong = ZHI_TO_GONG[dayGZ.zhi] || 9;
+      if (dayZhiGong === 5) dayZhiGong = jiGong5;
+      const tianMen = rotateMenToHour(diMen, zhiShiMen, dayZhiGong, isYang);
+      const shenOnGong = buildBaShen(dayGanGong, isYang);
 
-      // 空亡（時旬）
-      const xunkong = getXunKong(hourGZ.gan, hourGZ.zhi);
+      // 空亡（日旬）
+      const xunkong = getXunKong(dayGZ.gan, dayGZ.zhi);
 
       // 吉門方位
       const luckyMen = ["開", "休", "生"];
@@ -2442,13 +2439,13 @@
       const dunLabel = isYang ? "陽遁" : "陰遁";
       return {
         juLabel: `${dunLabel}${ju}局 · ${yuanInfo.yuan}元 · ${jieqi}`,
-        shiLabel: `${hourGZ.full}時（${hourNote}）`,
-        zhifu: `${zfStar}（${xun.yi}）→ ${GONG_NAME[hourGanGong]}`,
-        zhishi: `${zhiShiMen}門 → ${GONG_NAME[hourGong === 5 ? 2 : hourGong]}`,
-        meta: `旬首${xun.xunShou} · 符頭${yuanInfo.fuTou} · 空亡${xunkong.join("")}`,
+        shiLabel: `${dayGZ.full}日（日家）`,
+        zhifu: `${zfStar}（${xun.yi}）→ ${GONG_NAME[dayGanGong]}`,
+        zhishi: `${zhiShiMen}門 → ${GONG_NAME[dayZhiGong]}`,
+        meta: `日旬${xun.xunShou} · 符頭${yuanInfo.fuTou} · 空亡${xunkong.join("")}`,
         lucky: lucky.length ? lucky.join("、") : "吉門多入中宮，宜穩守",
         cells,
-        note: `拆補法 · ${dunLabel}${ju}局 · 值符${zfStar}值使${zhiShiMen}門 · 僅供民俗參考`
+        note: `日家拆補 · ${dunLabel}${ju}局 · 值符${zfStar}值使${zhiShiMen}門 · 以日干支起盤`
       };
     }
 
