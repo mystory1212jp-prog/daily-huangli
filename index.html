@@ -519,6 +519,93 @@
       letter-spacing: 0.04em;
     }
 
+    /* 皇極數讖言 */
+    .huangji-box {
+      margin-bottom: 12px;
+      border-radius: 12px;
+      padding: 12px;
+      background: linear-gradient(160deg, #f4f0ff 0%, #fff8f0 100%);
+      border: 1px solid rgba(90, 60, 140, 0.22);
+    }
+
+    .huangji-box h4 {
+      font-family: "Noto Serif TC", serif;
+      font-size: 0.92rem;
+      letter-spacing: 0.15em;
+      color: #4a2d7a;
+      margin: 0 0 8px;
+      text-align: center;
+    }
+
+    .huangji-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 8px;
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+
+    .huangji-meta .hm {
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 8px;
+      padding: 6px 8px;
+      border: 1px solid rgba(90, 60, 140, 0.12);
+    }
+
+    .huangji-meta .hm .k {
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      display: block;
+      font-size: 0.7rem;
+      margin-bottom: 2px;
+    }
+
+    .huangji-meta .hm .v {
+      font-family: "Noto Serif TC", serif;
+      font-weight: 700;
+      color: #3d2466;
+      letter-spacing: 0.04em;
+    }
+
+    .huangji-chen {
+      background: rgba(255, 255, 255, 0.85);
+      border-left: 3px solid #6b4a9e;
+      border-radius: 0 8px 8px 0;
+      padding: 10px 12px;
+      font-family: "Noto Serif TC", serif;
+      font-size: 0.92rem;
+      line-height: 1.7;
+      color: var(--ink);
+      letter-spacing: 0.04em;
+    }
+
+    .huangji-chen .hc-label {
+      display: block;
+      font-family: "Noto Sans TC", sans-serif;
+      font-size: 0.72rem;
+      color: #6b4a9e;
+      letter-spacing: 0.12em;
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+
+    .huangji-chen .hc-gua {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+      letter-spacing: 0.06em;
+    }
+
+    .huangji-note {
+      margin-top: 6px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-align: center;
+      letter-spacing: 0.04em;
+      line-height: 1.45;
+    }
+
     .liuren-box {
       grid-column: 1 / -1;
       background: linear-gradient(180deg, #fffdf7, var(--paper-dark));
@@ -2389,10 +2476,10 @@
       {
         id: "p1985",
         birthSolar: "1985-08-28",
+        birthHour: "辰", // 陽曆 1985.08.28 辰時
         label: "1985.08.28",
         gender: "male",
         genderLabel: "男",
-        // 乙丑年 · 牛 · 處女座（日柱初始化時計算）
         xiao: "牛",
         constellation: "處女座",
         preferWx: ["土", "火", "金"],
@@ -2408,10 +2495,10 @@
       {
         id: "p1995",
         birthSolar: "1995-11-08",
+        birthHour: "寅", // 陽曆 1995.11.08 寅時
         label: "1995.11.08",
         gender: "female",
         genderLabel: "女",
-        // 乙亥年 · 豬 · 天蠍座
         xiao: "豬",
         constellation: "天蠍座",
         preferWx: ["水", "金", "木"],
@@ -2425,6 +2512,189 @@
         summaryTone: "天蠍座"
       }
     ];
+
+    /* ========== 皇極數 · 元會運世 · 讖言 ========== */
+    // 一元=12會=30運×12=4320世；以「年」為小元，月→會、日→運、時→世
+    // 先天六十四卦序（圓圖常見簡序，作數序取卦索引）
+    const HUANGJI_GUA64 = [
+      "乾為天", "坤為地", "水雷屯", "山水蒙", "水天需", "天水訟", "地水師", "水地比",
+      "風天小畜", "天澤履", "地天泰", "天地否", "天火同人", "火天大有", "地山謙", "雷地豫",
+      "澤雷隨", "山風蠱", "地澤臨", "風地觀", "火雷噬嗑", "山火賁", "山地剝", "地雷復",
+      "天雷無妄", "山天大畜", "山雷頤", "澤風大過", "坎為水", "離為火", "澤山咸", "雷風恆",
+      "天山遯", "雷天大壯", "火地晉", "地火明夷", "風火家人", "火澤睽", "水山蹇", "雷水解",
+      "山澤損", "風雷益", "澤天夬", "天風姤", "澤地萃", "地風升", "澤水困", "水風井",
+      "澤火革", "火風鼎", "震為雷", "艮為山", "風山漸", "雷澤歸妹", "雷火豐", "火山旅",
+      "巽為風", "兌為澤", "風水渙", "水澤節", "風澤中孚", "雷山小過", "水火既濟", "火水未濟"
+    ];
+    // 數序對應應驗讖文（64 條，民俗簡編，非原書全文）
+    const HUANGJI_CHENWEN = [
+      "潛龍勿用，蓄勢於淵；今日宜藏鋒，待時而動。",
+      "厚德載物，靜中生機；穩紮根基，勿急求成。",
+      "草創艱難，宜求助於人；小事可成，大事緩圖。",
+      "蒙以養正，虛心受教；迷時勿斷，問道則明。",
+      "需于酒食，耐心等待；時機未至，強求反滯。",
+      "爭訟傷和，退一步海闊；和為貴，訟則終凶。",
+      "師出以律，眾志可成；有領導則吉，散亂則危。",
+      "親比得人，互助有功；近賢遠佞，事半功倍。",
+      "密雲不雨，積蓄未發；修文習藝，以待密雲化雨。",
+      "如履薄冰，慎行則亨；言行有節，可涉大川。",
+      "天地交泰，通達之象；合作互利，財帛可期。",
+      "閉塞不通，宜守不宜攻；小往大來未至，且安其位。",
+      "同人于野，以公心聚眾；求同存異，事可得助。",
+      "大有得眾，豐盛可期；滿而不溢，方能長保。",
+      "謙謙君子，有終吉；退讓非弱，後發先至。",
+      "雷出地奮，喜樂可為；宜宴樂和眾，忌驕縱失度。",
+      "隨時之義，隨緣而安；從善如流，可得貴人。",
+      "振民育德，整治舊弊；先革新己，再革新事。",
+      "臨民以德，感化勝於強迫；近悅遠來，漸入佳境。",
+      "風行地上，觀察入微；多看少說，方知真相。",
+      "明罰敕法，決斷宜速；咬合分明，去梗則暢。",
+      "文飾得宜，儀表與內涵並重；過度粉飾，反失其真。",
+      "剝極必復，勿再損下；處不利之時，守正待變。",
+      "一陽來復，轉機初現；從零開始，生機暗長。",
+      "無妄之災，宜誠不宜詐；妄動取禍，守正無咎。",
+      "篤實輝光，日新其德；積學儲才，大器可成。",
+      "自養養人，言語飲食有節；妄語傷身，慎口慎腹。",
+      "獨立不懼，澤滅木之象；非常之時，非常之舉須量力。",
+      "習坎重險，心亨行有尚；以誠通險，勿慌勿躁。",
+      "明兩作離，附麗得正；文明以止，照物則明。",
+      "二氣感應，以虛受人；感情、合作皆宜真誠相待。",
+      "恆久不已，利有攸往；持之以恆，小積成大。",
+      "天下有山，退而養德；知所進退，是謂高明。",
+      "雷在天上，壯而勿恃；君子用壯於禮，小人用壯於氣。",
+      "明出地上，進德修業；晝日三接，名利可漸。",
+      "明入地中，晦而能明；處困守正，終見光明。",
+      "風自火出，家道以正；先齊其家，後及其外。",
+      "二女同居，其志不同；求同存異，睽中求合。",
+      "蹇利西南，不利東北；知難而止，反身修德。",
+      "雷雨作解，赦過宥罪；解難之後，宜防再結。",
+      "山下有澤，懲忿窒欲；損己益人，長久之道。",
+      "風雷相益，遷善改過；見善則遷，有過則改。",
+      "揚于王庭，決而能和；果斷去佞，仍須以德。",
+      "天下有風，姤遇得奇；不期而遇，謹防私邪。",
+      "澤上於地，聚眾以正；有所附麗，勿聚非人。",
+      "地中生木，積小高大；循序升進，不可躐等。",
+      "澤無水困，致命遂志；困中求通，言寡尤、行寡悔。",
+      "木上有水，養而不窮；修井改邑，往來井井。",
+      "澤中有火，革新可成；順天應人，去故取新。",
+      "木上有火，鼎新革故；正位凝命，名器重之。",
+      "洊雷震，恐致福；震驚百里，不喪匕鬯。",
+      "兼山艮，止其所止；時止則止，時行則行。",
+      "山上有木，漸積而成；女歸吉，進以正。",
+      "澤上有雷，歸妹慎始；情感之事，名分宜正。",
+      "雷電皆至，豐大宜照；勿憂宜日中，過中則昃。",
+      "山上有火，旅琐琐；羈旅在外，柔順中正則吉。",
+      "隨風巽，申命行事；柔而能入，反復叮嚀。",
+      "麗澤兌，朋友講習；和悅得眾，尙須誠信。",
+      "風行水上，渙汗其大號；散中求聚，祭祀用大牲。",
+      "澤上有水，節以制度；苦節不可貞，中正為美。",
+      "澤上有風，中孚豚魚吉；信及於微，可涉大川。",
+      "山上有雷，小過可小事；不宜上宜下，過恭無咎。",
+      "水在火上，既濟勿忘患；初吉終亂，思患預防。",
+      "火在水上，未濟可濟；小狐汔濟，濡其尾，無攸利，慎之。"
+    ];
+
+    /**
+     * 出生／當日 → 皇極元會運世數序
+     * 小元法：一年為一元之象；月為會(1–12)、日為運(1–30)、時支為世(1–12)
+     * 年序以甲子年為元1…甲子循環60，對應「元」之細分
+     */
+    function toHuangjiShuxu(year, month, day, hourZhi) {
+      const yuan = ((year - 4) % 60 + 60) % 60 + 1; // 甲子年=1
+      const hui = ((month - 1) % 12) + 1;
+      const yun = Math.min(30, Math.max(1, day)); // 皇極運以三十為限
+      const shi = DI_ZHI.indexOf(hourZhi) + 1;
+      // 一年內數序（1～4320，合一元之世數）
+      const yearXu = (hui - 1) * 360 + (yun - 1) * 12 + shi;
+      // 跨年總序（便於本命定位）
+      const totalXu = (yuan - 1) * 4320 + yearXu;
+      // 卦序、讖索引（64）
+      const guaIdx = (yearXu - 1) % 64;
+      return {
+        yuan, hui, yun, shi, yearXu, totalXu, guaIdx,
+        label: `元${yuan}·會${hui}·運${yun}·世${shi}`,
+        yearXuLabel: `年內序第${yearXu}`,
+        gua: HUANGJI_GUA64[guaIdx],
+        chenwen: HUANGJI_CHENWEN[guaIdx]
+      };
+    }
+
+    /** 歷史尺度元會運世（堯甲辰起算簡推，供對照） */
+    function historicalYuanHuiYunShi(year) {
+      // 帝堯甲辰約西元前2357；午會為第七會
+      const YAO = -2357;
+      let elapsed = year - YAO;
+      if (elapsed < 0) elapsed = 0;
+      const HUI_YEARS = 10800;
+      const YUN_YEARS = 360;
+      const SHI_YEARS = 30;
+      const huiIdx = Math.floor(elapsed / HUI_YEARS) % 12; // 0=子會
+      const remHui = elapsed % HUI_YEARS;
+      const yunIdx = Math.floor(remHui / YUN_YEARS) % 30;
+      const remYun = remHui % YUN_YEARS;
+      const shiIdx = Math.floor(remYun / SHI_YEARS) % 12;
+      const huiName = DI_ZHI[huiIdx] + "會";
+      return {
+        label: `${huiName}·第${yunIdx + 1}運·第${shiIdx + 1}世`,
+        huiName,
+        yun: yunIdx + 1,
+        shi: shiIdx + 1
+      };
+    }
+
+    /**
+     * 本命數序 × 當天數序 → 應驗讖文
+     * 對應元會運世資料：取當日年內數序與本命年內數序合成應驗序
+     */
+    function resolveHuangjiYingyan(birthXu, dayXu) {
+      // 應驗序：本命序與流日序相會（合一元4320之循環後歸64卦）
+      const yingXu = ((birthXu.yearXu - 1 + dayXu.yearXu - 1) % 4320) + 1;
+      const guaIdx = (yingXu - 1) % 64;
+      // 另取「當天所屬數序」直應
+      const dayDirectIdx = (dayXu.yearXu - 1) % 64;
+      return {
+        yingXu,
+        yingLabel: `應驗序第${yingXu}`,
+        gua: HUANGJI_GUA64[guaIdx],
+        chenwen: HUANGJI_CHENWEN[guaIdx],
+        dayGua: HUANGJI_GUA64[dayDirectIdx],
+        dayChenwen: HUANGJI_CHENWEN[dayDirectIdx],
+        birth: birthXu,
+        day: dayXu
+      };
+    }
+
+    function computePersonHuangji(person, date) {
+      ensurePersonProfile(person);
+      const [by, bm, bd] = person.birthSolar.split("-").map(Number);
+      const hourZhi = person.birthHour || "午";
+      const birthXu = toHuangjiShuxu(by, bm, bd, hourZhi);
+      const y = date.getFullYear();
+      const m = date.getMonth() + 1;
+      const d = date.getDate();
+      // 當天時：今日用當前時辰，否則午
+      const now = new Date();
+      const sameDay =
+        now.getFullYear() === y && now.getMonth() + 1 === m && now.getDate() === d;
+      const dayHour = sameDay ? hourZhiFromDate(now) : "午";
+      const dayXu = toHuangjiShuxu(y, m, d, dayHour);
+      const hist = historicalYuanHuiYunShi(y);
+      const ying = resolveHuangjiYingyan(birthXu, dayXu);
+      const hourGZ = getHourGanZhi(person.birthDayGZ.gan, hourZhi);
+      return {
+        birthSolar: person.birthSolar,
+        birthHour: hourZhi,
+        birthHourPillar: hourGZ.full,
+        birthXu,
+        dayXu,
+        hist,
+        ying,
+        // 主要展示：應驗讖（本命×當日）
+        displayChenwen: ying.chenwen,
+        displayGua: ying.gua,
+        displayYingXu: ying.yingXu
+      };
+    }
 
     const LIUHE = { 子: "丑", 丑: "子", 寅: "亥", 亥: "寅", 卯: "戌", 戌: "卯", 辰: "酉", 酉: "辰", 巳: "申", 申: "巳", 午: "未", 未: "午" };
     const LIUHAI = { 子: "未", 未: "子", 丑: "午", 午: "丑", 寅: "巳", 巳: "寅", 卯: "辰", 辰: "卯", 申: "亥", 亥: "申", 酉: "戌", 戌: "酉" };
@@ -2494,19 +2764,22 @@
       if (person.birthDayGZ) return person;
       const d = parseDateKey(person.birthSolar);
       d.setHours(12, 0, 0, 0);
-      const [by, bm] = person.birthSolar.split("-").map(Number);
+      const [by, bm, bd] = person.birthSolar.split("-").map(Number);
       const lunar = solarToLunar(d);
       const yearGZ = getYearGanZhi(lunar.year);
       const dayGZ = getDayGanZhi(d);
       const monthGZ = getMonthGanZhi(by, bm);
+      const hourZhi = person.birthHour || "午";
+      const hourGZ = getHourGanZhi(dayGZ.gan, hourZhi);
       person.birthDayGZ = dayGZ;
       person.birthYearGZ = yearGZ;
       person.birthMonthGZ = monthGZ;
+      person.birthHourGZ = hourGZ;
       person.birthLunar = lunar;
       person.yearGan = yearGZ.gan;
       person.yearZhi = yearGZ.zhi;
       person.xiao = ZHI_TO_XIAO[yearGZ.zhi];
-      person.constellation = getConstellation(bm, Number(person.birthSolar.split("-")[2]));
+      person.constellation = getConstellation(bm, bd);
       person.titleHint = `${yearGZ.full}${person.xiao} · ${person.constellation}` +
         (person.gender === "female" ? " · 女" : person.gender === "male" ? "" : "");
       return person;
@@ -2961,6 +3234,8 @@
         qinglong: almanacCtx.qinglong
       });
 
+      const huangji = computePersonHuangji(person, date);
+
       return {
         person,
         score: total,
@@ -2994,11 +3269,13 @@
         personalActions,
         summary,
         tijiTip,
+        huangji,
         chips: [
           `生肖 ${person.xiao}`,
           person.genderLabel ? `性別 ${person.genderLabel}` : null,
           `年柱 ${person.birthYearGZ.full}`,
           `日柱 ${birthDay.full}`,
+          `時柱 ${person.birthHourGZ ? person.birthHourGZ.full : (person.birthHour || "—")}`,
           `星座 ${person.constellation}`,
           `虛歲 ${xuAge}`,
           `週歲 ${age}`
@@ -3086,6 +3363,32 @@
           <div class="personal-body">
             <div class="profile-row">${p.chips.map(c => `<span class="chip">${c}</span>`).join("")}</div>
             <div class="relation-box">${p.relation.label}　<span class="stars">${p.stars}</span></div>
+            ${p.huangji ? `
+            <div class="huangji-box">
+              <h4>皇極數讖言</h4>
+              <div class="huangji-meta">
+                <div class="hm">
+                  <span class="k">本命數序（出生）</span>
+                  <span class="v">${p.huangji.birthXu.label}</span>
+                  <div class="zs-hint">${p.person.birthSolar.replace(/-/g, ".")}${p.huangji.birthHour}時 · 時柱${p.huangji.birthHourPillar} · ${p.huangji.birthXu.yearXuLabel}</div>
+                </div>
+                <div class="hm">
+                  <span class="k">當天數序（元會運世）</span>
+                  <span class="v">${p.huangji.dayXu.label}</span>
+                  <div class="zs-hint">史尺 ${p.huangji.hist.label} · ${p.huangji.dayXu.yearXuLabel}</div>
+                </div>
+              </div>
+              <div class="huangji-chen">
+                <span class="hc-label">應驗讖文 · 序第${p.huangji.displayYingXu}</span>
+                <div class="hc-gua">值卦：${p.huangji.displayGua}（本命×流日合成）</div>
+                ${p.huangji.displayChenwen}
+              </div>
+              <div class="huangji-note">
+                小元法：年→元、月→會、日→運、時→世 · 應驗序＝本命年內序與當日年內序相會<br />
+                讖文為六十四卦民俗簡編，僅供參考，非《皇極經世》原書逐條
+              </div>
+            </div>
+            ` : ""}
             <div class="aspect-grid five">
               ${p.aspects.map(a => `
                 <div class="aspect">
