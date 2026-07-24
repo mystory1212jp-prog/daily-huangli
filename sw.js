@@ -1,5 +1,5 @@
 /* 每日黃曆 Service Worker — 離線可開啟 */
-const CACHE = "huangli-v16";
+const CACHE = "huangli-v17";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,7 +9,15 @@ const ASSETS = [
   "./icons/icon-512.png",
   "./lib/huangli-db.js",
   "./lib/analysis-engine.js",
-  "./data/core-db.json"
+  "./lib/personal-system.js",
+  "./data/core-db.json",
+  "./data/mapping-db.json",
+  "./data/personal-bazi.json",
+  "./data/daily-facts-2024.json",
+  "./data/daily-facts-2025.json",
+  "./data/daily-facts-2026.json",
+  "./data/daily-facts-2027.json",
+  "./data/daily-facts-2028.json"
 ];
 
 self.addEventListener("install", (event) => {

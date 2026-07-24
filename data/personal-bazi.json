@@ -1,0 +1,91 @@
+{
+  "profiles": [
+    {
+      "solar": "1985-08-28",
+      "hour": 8,
+      "year": "乙丑",
+      "month": "甲申",
+      "day": "己亥",
+      "time": "戊辰",
+      "dayMaster": "己",
+      "dayZhi": "亥",
+      "dayMasterWx": "土",
+      "yearGan": "乙",
+      "yearZhi": "丑",
+      "monthGan": "甲",
+      "monthZhi": "申",
+      "timeGan": "戊",
+      "timeZhi": "辰",
+      "dayNaYin": "平地木",
+      "xunKong": "辰巳",
+      "taiYuan": "乙亥",
+      "mingGong": "辛巳",
+      "id": "p1985",
+      "label": "1985.08.28",
+      "birthHourZhi": "辰",
+      "gender": "male",
+      "genderLabel": "男",
+      "xiao": "牛",
+      "xiYong": [
+        "火",
+        "土",
+        "金"
+      ],
+      "jiYong": [
+        "木",
+        "水"
+      ],
+      "luckyColors": [
+        "黃",
+        "棕",
+        "紅",
+        "金"
+      ],
+      "constellation": "處女座"
+    },
+    {
+      "solar": "1995-11-08",
+      "hour": 4,
+      "year": "乙亥",
+      "month": "丙戌",
+      "day": "癸卯",
+      "time": "甲寅",
+      "dayMaster": "癸",
+      "dayZhi": "卯",
+      "dayMasterWx": "水",
+      "yearGan": "乙",
+      "yearZhi": "亥",
+      "monthGan": "丙",
+      "monthZhi": "戌",
+      "timeGan": "甲",
+      "timeZhi": "寅",
+      "dayNaYin": "金箔金",
+      "xunKong": "辰巳",
+      "taiYuan": "丁丑",
+      "mingGong": "辛巳",
+      "id": "p1995",
+      "label": "1995.11.08",
+      "birthHourZhi": "寅",
+      "gender": "female",
+      "genderLabel": "女",
+      "xiao": "豬",
+      "xiYong": [
+        "金",
+        "水",
+        "木"
+      ],
+      "jiYong": [
+        "土",
+        "火"
+      ],
+      "luckyColors": [
+        "黑",
+        "深藍",
+        "金",
+        "綠"
+      ],
+      "constellation": "天蠍座"
+    }
+  ],
+  "source": "lunar_python EightChar"
+}

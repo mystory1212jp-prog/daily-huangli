@@ -1076,6 +1076,46 @@
       font-size: 0.78rem;
     }
 
+    .profile-row .chip.det {
+      background: rgba(31, 107, 58, 0.1);
+      border-color: rgba(31, 107, 58, 0.35);
+      color: #1a4d2e;
+    }
+
+    .det-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 0.8rem;
+    }
+    .det-meta .dm {
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(155, 28, 28, 0.04);
+      border: 1px solid rgba(155, 28, 28, 0.1);
+    }
+    .det-meta .dm .k {
+      display: block;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .det-meta .dm .v {
+      font-family: "Noto Serif TC", serif;
+      color: var(--ink);
+      font-weight: 600;
+    }
+    .det-meta .dm.full { grid-column: 1 / -1; }
+    .source-tag {
+      margin-top: 10px;
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      opacity: 0.85;
+    }
+
     .relation-box {
       text-align: center;
       padding: 10px 12px;
@@ -1413,13 +1453,14 @@
     </article>
 
     <footer>
-      傳統黃曆文化參考 · 個人運勢依生肖干支與建除簡推<br />
+      傳統黃曆文化參考 · 個人運勢＝lunar_python 精算＋三維映射語意轉譯<br />
       僅供趣味與民俗參考 · 非專業命理／擇日依據
     </footer>
   </div>
 
   <script src="lib/huangli-db.js"></script>
   <script src="lib/analysis-engine.js"></script>
+  <script src="lib/personal-system.js"></script>
   <script>
     /* ========== 常數 ========== */
     const TIAN_GAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
@@ -3818,13 +3859,14 @@
         p.score >= 72 ? "0 0 0 1px rgba(31,107,58,0.5)" :
         p.score < 45 ? "0 0 0 1px rgba(155,28,28,0.55)" : "none";
       const genderClass = person.gender === "female" ? " female" : "";
+      const det = p.detMeta || null;
 
       return `
         <section class="personal${genderClass}" aria-label="${person.label}出生個人運勢">
           <div class="personal-head">
             <div class="who">
               ${person.titleHint}
-              <small>${person.label} 出生 · 農曆${p.lunarShort} · 日柱${p.birthDayPillar}</small>
+              <small>${person.label} 出生 · 農曆${p.lunarShort} · 日柱${p.birthDayPillar}${det && det.dayMaster ? ` · 日主${det.dayMaster}` : ""}</small>
             </div>
             <div class="luck-badge" style="box-shadow:${badgeShadow}">
               <span class="score">${p.score}</span>
@@ -3832,7 +3874,19 @@
             </div>
           </div>
           <div class="personal-body">
-            <div class="profile-row">${p.chips.map(c => `<span class="chip">${c}</span>`).join("")}</div>
+            <div class="profile-row">${p.chips.map(c => {
+              const isDet = typeof c === "string" && (c.startsWith("十神") || c.startsWith("建除") || c.startsWith("值神") || c.startsWith("星宿") || c.startsWith("流日"));
+              return `<span class="chip${isDet ? " det" : ""}">${c}</span>`;
+            }).join("")}</div>
+            ${det ? `
+            <div class="det-meta" aria-label="確定性計算摘要">
+              <div class="dm"><span class="k">流日十神</span><span class="v">${det.shiShen || "—"}</span></div>
+              <div class="dm"><span class="k">建除 · 值神</span><span class="v">${det.zhiXing || "—"} · ${det.tianShen || "—"}</span></div>
+              <div class="dm"><span class="k">二十八宿</span><span class="v">${det.xiu || "—"}${det.xiuLuck ? "（" + det.xiuLuck + "）" : ""}</span></div>
+              <div class="dm"><span class="k">喜用／忌神</span><span class="v">${det.xiYongHit ? "流日合喜用" : det.jiYongHit ? "流日觸忌" : "中性"}</span></div>
+              ${det.tcm ? `<div class="dm full"><span class="k">節氣養生 · ${det.tcm.jieqi || ""}</span><span class="v">${det.tcm.wx || ""}（${det.tcm.zang || ""}）— ${det.tcm.advice || ""}</span></div>` : ""}
+            </div>
+            ` : ""}
             <div class="relation-box">${p.relation.label}　<span class="stars">${p.stars}</span></div>
             ${p.huangji ? `
             <div class="huangji-box">
@@ -3884,12 +3938,122 @@
               <span class="tiji-label">趨吉避凶 · 提高運勢</span>
               ${p.tijiTip || "今日以穩為主，順勢而為即可。"}
             </div>
+            ${p.engineSource ? `<div class="source-tag">運勢來源：${p.engineSource}</div>` : ""}
           </div>
         </section>
       `;
     }
 
-    function render(date) {
+    /** 以確定性 JSON + 映射庫覆蓋／強化個人運勢（雙層架構） */
+    async function enrichPersonalsWithEngine(date, personals) {
+      if (!window.PersonalFortuneEngine || typeof PersonalFortuneEngine.getPersonalFortune !== "function") {
+        return personals;
+      }
+      const uniq = (arr) => [...new Set((arr || []).filter(Boolean))];
+      const out = [];
+      for (const base of personals) {
+        try {
+          const eng = await PersonalFortuneEngine.getPersonalFortune(base.person.id, date);
+          if (!eng) {
+            out.push(base);
+            continue;
+          }
+          const relMain = (eng.relations && eng.relations[0]) || null;
+          const relation = relMain
+            ? {
+                key: relMain.type,
+                label: relMain.detail
+                  ? `本命${relMain.pillar && relMain.pillar !== "-" ? relMain.pillar + "支" : ""}${relMain.detail}（精算）`
+                  : `本命與流日${relMain.type}（精算）`,
+                score: typeof eng.relationScore === "number" ? eng.relationScore : (relMain.score || 0)
+              }
+            : base.relation;
+
+          const workYi = (eng.workTips || []).map((t) => `十神宜：${t}`);
+          const lifeYi = (eng.lifeTips || []).map((t) => `生活：${t}`);
+          const yiModern = eng.yiModern || [];
+          const cautions = eng.cautions || [];
+          const yi = uniq([...workYi, ...lifeYi, ...yiModern, ...(base.yi || [])]).slice(0, 7);
+          const ji = uniq([...cautions, ...(base.ji || [])]).slice(0, 7);
+          const notes = uniq([...(eng.actions || []), ...(base.notes || [])]).slice(0, 8);
+
+          const tcm = eng.tcm
+            ? { ...eng.tcm, jieqi: (eng.llmPayload && eng.llmPayload.deterministic && eng.llmPayload.deterministic.prevJieQi) || "" }
+            : null;
+          // prevJieQi from deterministic pack
+          const detP = eng.llmPayload && eng.llmPayload.deterministic ? eng.llmPayload.deterministic : {};
+          if (tcm && detP.prevJieQi) tcm.jieqi = detP.prevJieQi;
+
+          const who = `${base.birthYearPillar}${base.person.xiao}`;
+          let summary = base.summary;
+          if (eng.score >= 72) {
+            summary = `整體運勢「${eng.level}」。${who}今日流日十神為「${eng.shiShen}」、建除「${eng.zhiXing}」；氣場偏開，可依十神場景積極推進，仍見好就收。`;
+          } else if (eng.score >= 55) {
+            summary = `整體運勢「${eng.level}」。十神「${eng.shiShen}」日，宜把力氣放在可控細節與映射建議上，不強求一次到位。`;
+          } else if (eng.score >= 40) {
+            summary = `整體運勢「${eng.level}」。建除「${eng.zhiXing}」與刑冲合害偏守，對外談判可延後，先安頓節奏。`;
+          } else {
+            summary = `整體運勢「${eng.level}」。冲克或凶煞較重，少做重大承諾、少硬碰；安全感來自放慢與覆核。`;
+          }
+
+          // 分項：以精算總分微調，保留維度差異
+          const delta = eng.score - base.score;
+          const clampS = (n) => Math.max(15, Math.min(98, Math.round(n)));
+          const aspects = (base.aspects || []).map((a) => ({
+            ...a,
+            score: clampS(a.score + delta * 0.55)
+          }));
+
+          const detChips = [
+            eng.shiShen ? `十神 ${eng.shiShen}` : null,
+            eng.zhiXing ? `建除 ${eng.zhiXing}` : null,
+            eng.tianShen ? `值神 ${eng.tianShen}` : null,
+            eng.xiu ? `星宿 ${eng.xiu}` : null,
+            detP.flowDay ? `流日 ${detP.flowDay}` : null
+          ].filter(Boolean);
+
+          const chips = uniq([...(base.chips || []).filter((c) => !/^十神|^建除|^值神|^星宿|^流日/.test(c)), ...detChips]);
+
+          const tijiTip = (eng.actions || []).slice(0, 3).join("；") || base.tijiTip;
+
+          out.push({
+            ...base,
+            score: eng.score,
+            level: eng.level,
+            stars: starText(eng.score),
+            relation,
+            aspects,
+            yi: yi.length ? yi : base.yi,
+            ji: ji.length ? ji : base.ji,
+            notes: notes.length ? notes : base.notes,
+            personalActions: eng.actions || base.personalActions,
+            summary,
+            tijiTip,
+            chips,
+            detMeta: {
+              dayMaster: detP.dayMaster || "",
+              shiShen: eng.shiShen,
+              zhiXing: eng.zhiXing,
+              tianShen: eng.tianShen,
+              tianShenType: eng.tianShenType,
+              xiu: eng.xiu,
+              xiuLuck: eng.xiuLuck,
+              xiYongHit: !!detP.xiYongHit,
+              jiYongHit: !!detP.jiYongHit,
+              tcm
+            },
+            engineSource: eng.source || "lunar_python+mapping-db",
+            llmPayload: eng.llmPayload || null
+          });
+        } catch (err) {
+          console.warn("PersonalFortuneEngine enrich fail", base.person && base.person.id, err);
+          out.push(base);
+        }
+      }
+      return out;
+    }
+
+    async function render(date) {
       let data = computeAlmanac(date);
       // 開源資料庫＋天時引擎：強化每日分析／兩人運勢（配合節氣旺衰、十神喜用）
       if (window.HuangliEngine && typeof HuangliEngine.enhanceAlmanac === "function") {
@@ -3898,6 +4062,12 @@
         } catch (err) {
           console.warn("HuangliEngine enhance failed", err);
         }
+      }
+      // 雙層架構：確定性 facts + 映射語意覆蓋個人運勢
+      try {
+        data.personals = await enrichPersonalsWithEngine(date, data.personals || []);
+      } catch (err) {
+        console.warn("personal enrich failed", err);
       }
       document.getElementById("weekday").textContent = data.weekday;
       document.getElementById("solarDate").textContent = data.solar;

@@ -1,6 +1,6 @@
 # 每日黃曆
 
-傳統風格每日黃曆網頁 App：國曆／農曆、宜忌、干支，以及 1985.08.28 個人運勢。
+傳統風格每日黃曆網頁 App：國曆／農曆、宜忌、干支，以及兩位個人專屬運勢。
 
 可安裝到 iPhone 主畫面（PWA），離線也能查。
 
@@ -31,19 +31,24 @@ python3 -m http.server 8765
 - 年月日干支、生肖、建除宜忌
 - 五行、納音、冲煞、方位、彭祖百忌
 - 日家奇門、六壬日課
-- 個人運勢（1985.08.28 辰時、1995.11.08 寅時）
-- **開源天時資料庫**（`data/` + `lib/`，約 0.1 MB）驅動節氣旺衰、十神喜用、綜合評分
-- 每日分析與行動方案（配合當日天時）
-- PWA 離線快取
+- **個人運勢雙層架構**（1985.08.28 辰時、1995.11.08 寅時）
+  - 確定性層：`lunar_python` 精算日干支、建除、二十八宿、神煞、與本命刑冲合害
+  - 語意層：十神→現代場景、神煞→情緒能量、節氣→養生映射，輸出現代生活建議
+  - 結構化 `llmPayload` 可直接餵 Batch LLM
+- 開源天時資料庫（`data/` + `lib/`）
+- 每日分析與行動方案
+- PWA 離線快取（含 2024–2028 日課精算檔）
 
-## 資料庫
+## 資料庫重建
 
 ```bash
-python3 scripts/build_db.py   # 重建 data/core-db.json 與 lib/huangli-db.js
+pip3 install -r requirements.txt
+python3 scripts/build_db.py              # core-db + huangli-db.js
+python3 scripts/build_personal_system.py # mapping-db + personal-bazi + daily-facts-YYYY + personal-system.js
 ```
 
-詳見 [data/README.md](./data/README.md)。體積遠低於 500 MB。
+體積約 **4 MB**，遠低於 500 MB。
 
 ## 說明
 
-宜忌與運勢依民俗算法簡化，**僅供趣味參考**，不宜作為正式擇日或重大決策依據。
+宜忌與運勢依民俗算法與開源曆法套件簡化，**僅供趣味參考**，不宜作為正式擇日或重大決策依據。

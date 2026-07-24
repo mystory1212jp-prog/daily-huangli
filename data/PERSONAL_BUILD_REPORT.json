@@ -1,0 +1,16 @@
+{
+  "total_bytes": 4200606,
+  "total_MB": 4.006,
+  "under_500MB": true,
+  "daily_files": {
+    "daily-facts-2024.json": 805264,
+    "daily-facts-2025.json": 806396,
+    "daily-facts-2026.json": 808791,
+    "daily-facts-2027.json": 811199,
+    "daily-facts-2028.json": 810945
+  },
+  "profiles": [
+    "p1985 乙丑 甲申 己亥 戊辰",
+    "p1995 乙亥 丙戌 癸卯 甲寅"
+  ]
+}
