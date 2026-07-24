@@ -1,5 +1,5 @@
 /* 每日黃曆 Service Worker — 離線可開啟 */
-const CACHE = "huangli-v14";
+const CACHE = "huangli-v15";
 const ASSETS = [
   "./",
   "./index.html",
@@ -7,6 +7,9 @@ const ASSETS = [
   "./icons/apple-touch-icon.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
+  "./lib/huangli-db.js",
+  "./lib/analysis-engine.js",
+  "./data/core-db.json"
 ];
 
 self.addEventListener("install", (event) => {
@@ -31,7 +34,6 @@ self.addEventListener("fetch", (event) => {
     caches.match(req).then((cached) => {
       const fetchPromise = fetch(req)
         .then((res) => {
-          // 只快取同源成功回應
           if (res && res.ok && new URL(req.url).origin === self.location.origin) {
             const clone = res.clone();
             caches.open(CACHE).then((cache) => cache.put(req, clone));
@@ -40,7 +42,6 @@ self.addEventListener("fetch", (event) => {
         })
         .catch(() => cached);
 
-      // 導覽請求：優先快取（離線友善）
       if (req.mode === "navigate") {
         return cached || fetchPromise || caches.match("./index.html");
       }

@@ -1330,6 +1330,8 @@
     </footer>
   </div>
 
+  <script src="lib/huangli-db.js"></script>
+  <script src="lib/analysis-engine.js"></script>
   <script>
     /* ========== 常數 ========== */
     const TIAN_GAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
@@ -3534,13 +3536,36 @@
       const d = date.getDate();
       const lunar = solarToLunar(date);
       const yearGZ = getYearGanZhi(lunar.year);
-      // 月建依節氣（建除／青龍／月柱一致）
-      const monthGZ = getMonthGanZhi(y, m, date);
+      // 月建依節氣；有開源 DB 時優先用預計算節氣表
+      let monthGZ = getMonthGanZhi(y, m, date);
+      if (window.HuangliEngine && HuangliEngine.currentJieQiName && HuangliEngine.yueJian) {
+        const jq = HuangliEngine.currentJieQiName(y, m, d);
+        if (jq) {
+          const zhi = HuangliEngine.yueJian(jq);
+          const yearGanIndex = ((y - 4) % 10 + 10) % 10;
+          const monthGanStart = [2, 4, 6, 8, 0, 2, 4, 6, 8, 0][yearGanIndex];
+          const monthOrder = (DI_ZHI.indexOf(zhi) - 2 + 12) % 12;
+          const gan = TIAN_GAN[(monthGanStart + monthOrder) % 10];
+          monthGZ = { gan, zhi, full: gan + zhi };
+        }
+      }
       const dayGZ = getDayGanZhi(date);
       const jianchu = getJianChu(dayGZ.zhi, monthGZ.zhi);
       const qinglong = getQingLongShen(dayGZ.zhi, monthGZ.zhi);
-      // 宜忌：建除＋青龍＋冲煞＋日干（每日組合不同）
-      const yiji = buildDayYiji(jianchu, qinglong, dayGZ);
+      // 宜忌：建除＋青龍＋冲煞＋日干；若 DB 有建除表可對齊
+      let yiji = buildDayYiji(jianchu, qinglong, dayGZ);
+      if (window.HUANGLI_DB && HUANGLI_DB.huangli && HUANGLI_DB.huangli.jianchuYiji) {
+        const baseYi = HUANGLI_DB.huangli.jianchuYiji[jianchu];
+        if (baseYi) {
+          // 以 DB 建除為底再疊加已算的冲煞／青龍項（取聯集前段）
+          const extraYi = yiji.yi.filter((x) => !(baseYi.yi || []).includes(x));
+          const extraJi = yiji.ji.filter((x) => !(baseYi.ji || []).includes(x));
+          yiji = {
+            yi: [...(baseYi.yi || []), ...extraYi].filter((v, i, a) => a.indexOf(v) === i).slice(0, 7),
+            ji: [...(baseYi.ji || []), ...extraJi].filter((v, i, a) => a.indexOf(v) === i).slice(0, 7),
+          };
+        }
+      }
       const gods = getDayJiXiongShen(dayGZ.gan, dayGZ.zhi, monthGZ.zhi);
 
       const jieqi = getJieQi(date);
@@ -3665,7 +3690,15 @@
     }
 
     function render(date) {
-      const data = computeAlmanac(date);
+      let data = computeAlmanac(date);
+      // 開源資料庫＋天時引擎：強化每日分析／兩人運勢（配合節氣旺衰、十神喜用）
+      if (window.HuangliEngine && typeof HuangliEngine.enhanceAlmanac === "function") {
+        try {
+          data = HuangliEngine.enhanceAlmanac(data);
+        } catch (err) {
+          console.warn("HuangliEngine enhance failed", err);
+        }
+      }
       document.getElementById("weekday").textContent = data.weekday;
       document.getElementById("solarDate").textContent = data.solar;
       document.getElementById("lunarDate").textContent = data.lunar;
