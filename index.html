@@ -275,6 +275,87 @@
       color: #fff;
     }
 
+    /* 四絕日／四離日 — 高對比警示條 */
+    .si-alert {
+      display: none;
+      margin: 0;
+      padding: 12px 14px 14px;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .si-alert.show { display: block; }
+
+    .si-alert.jue {
+      background: linear-gradient(180deg, #3b0a0a 0%, #6b1010 40%, #8b1a1a 100%);
+      border-top: 3px solid #ffd54a;
+      border-bottom: 3px solid #ffd54a;
+      box-shadow: inset 0 0 0 2px rgba(255, 213, 74, 0.35);
+    }
+
+    .si-alert.li {
+      background: linear-gradient(180deg, #1a1030 0%, #3d2466 45%, #5a3480 100%);
+      border-top: 3px solid #e0c3ff;
+      border-bottom: 3px solid #e0c3ff;
+      box-shadow: inset 0 0 0 2px rgba(224, 195, 255, 0.35);
+    }
+
+    .si-alert .si-badge {
+      display: inline-block;
+      font-family: "Noto Serif TC", serif;
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: 0.35em;
+      padding: 6px 18px 6px 22px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      animation: si-pulse 1.6s ease-in-out infinite;
+    }
+
+    .si-alert.jue .si-badge {
+      color: #1a0a00;
+      background: linear-gradient(180deg, #ffe566, #f0c000 50%, #d4a017);
+      box-shadow: 0 0 16px rgba(255, 213, 74, 0.55);
+    }
+
+    .si-alert.li .si-badge {
+      color: #1a0a28;
+      background: linear-gradient(180deg, #f3e8ff, #d4b0ff 50%, #b388ff);
+      box-shadow: 0 0 16px rgba(179, 136, 255, 0.5);
+    }
+
+    @keyframes si-pulse {
+      0%, 100% { transform: scale(1); filter: brightness(1); }
+      50% { transform: scale(1.04); filter: brightness(1.08); }
+    }
+
+    .si-alert .si-sub {
+      font-size: 0.9rem;
+      letter-spacing: 0.08em;
+      line-height: 1.55;
+      color: #fff8e8;
+    }
+
+    .si-alert .si-sub strong {
+      color: #ffe566;
+      font-weight: 700;
+    }
+
+    .si-alert.li .si-sub strong { color: #f0dfff; }
+
+    .si-alert .si-tip {
+      margin-top: 4px;
+      font-size: 0.78rem;
+      opacity: 0.92;
+      letter-spacing: 0.06em;
+      color: rgba(255, 248, 232, 0.9);
+    }
+
+    .banner.has-si {
+      padding-bottom: 12px;
+    }
+
     .zodiac-row {
       display: flex;
       justify-content: center;
@@ -1184,6 +1265,13 @@
         </div>
       </div>
 
+      <!-- 四絕日／四離日：八節前一日，高對比標註 -->
+      <div class="si-alert" id="siAlert" role="alert" aria-live="polite">
+        <div class="si-badge" id="siBadge">—</div>
+        <div class="si-sub" id="siSub">—</div>
+        <div class="si-tip" id="siTip">諸事不宜開張、嫁娶、動土、遠行；宜守成、靜養</div>
+      </div>
+
       <div class="body">
         <section class="daily-analysis" id="dailyAnalysis" aria-label="每日分析與今日行動">
           <div class="da-head">
@@ -1850,6 +1938,82 @@
       ];
       const t = table[month - 1];
       return day < t[1] ? t[2] : t[3];
+    }
+
+    /**
+     * 四絕日／四離日
+     * 四絕：立春、立夏、立秋、立冬 的前一天
+     * 四離：春分、夏至、秋分、冬至 的前一天
+     * （八個重要節氣之前一日）
+     */
+    const SI_JUE_JIEQI = ["立春", "立夏", "立秋", "立冬"];
+    const SI_LI_JIEQI = ["春分", "夏至", "秋分", "冬至"];
+
+    function getJieQiDateInYear(year, jieqiName) {
+      // 優先開源 DB 節氣表
+      if (window.HuangliEngine && HuangliEngine.DB && HuangliEngine.DB.jieqi) {
+        const arr = HuangliEngine.DB.jieqi[String(year)];
+        if (arr) {
+          const hit = arr.find((x) => x.n === jieqiName);
+          if (hit) return new Date(year, hit.m - 1, hit.d, 12);
+        }
+      }
+      // 後備：與 getJieQi 相同近似日
+      const approxMap = {
+        小寒: [1, 5], 大寒: [1, 20], 立春: [2, 4], 雨水: [2, 19],
+        驚蟄: [3, 6], 春分: [3, 21], 清明: [4, 5], 穀雨: [4, 20],
+        立夏: [5, 6], 小滿: [5, 21], 芒種: [6, 6], 夏至: [6, 21],
+        小暑: [7, 7], 大暑: [7, 23], 立秋: [8, 8], 處暑: [8, 23],
+        白露: [9, 8], 秋分: [9, 23], 寒露: [10, 8], 霜降: [10, 23],
+        立冬: [11, 7], 小雪: [11, 22], 大雪: [12, 7], 冬至: [12, 22]
+      };
+      const md = approxMap[jieqiName];
+      if (!md) return null;
+      return new Date(year, md[0] - 1, md[1], 12);
+    }
+
+    function getSiJueLi(date) {
+      const y = date.getFullYear();
+      const key = (d) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const todayKey = key(date);
+
+      // 檢查今年與跨年（冬至前一日可能在 12 月、立春前一日在 2 月初）
+      for (const year of [y - 1, y, y + 1]) {
+        for (const name of SI_JUE_JIEQI) {
+          const jqDate = getJieQiDateInYear(year, name);
+          if (!jqDate) continue;
+          const prev = new Date(jqDate);
+          prev.setDate(prev.getDate() - 1);
+          prev.setHours(12, 0, 0, 0);
+          if (key(prev) === todayKey) {
+            return {
+              type: "jue",
+              label: "四絕日",
+              jieqi: name,
+              jieqiDate: key(jqDate),
+              tip: `明日即「${name}」。四絕日諸事不宜，忌開張、嫁娶、動土、安葬、遠行；宜靜守、清理、休整。`
+            };
+          }
+        }
+        for (const name of SI_LI_JIEQI) {
+          const jqDate = getJieQiDateInYear(year, name);
+          if (!jqDate) continue;
+          const prev = new Date(jqDate);
+          prev.setDate(prev.getDate() - 1);
+          prev.setHours(12, 0, 0, 0);
+          if (key(prev) === todayKey) {
+            return {
+              type: "li",
+              label: "四離日",
+              jieqi: name,
+              jieqiDate: key(jqDate),
+              tip: `明日即「${name}」。四離日氣機轉換，忌開張、嫁娶、動土、訂盟；宜收心、守成、少起爭端。`
+            };
+          }
+        }
+      }
+      return null;
     }
 
     function getJieQi(date) {
@@ -3567,11 +3731,28 @@
         }
       }
       const gods = getDayJiXiongShen(dayGZ.gan, dayGZ.zhi, monthGZ.zhi);
+      const siJueLi = getSiJueLi(date);
+
+      // 四絕／四離日：加重忌事，並在宜忌中顯著標註
+      if (siJueLi) {
+        yiji.yi = ["靜守", "休整", "清理收納", ...yiji.yi.filter((x) => !["開市", "嫁娶", "動土", "出行", "安床"].includes(x))].slice(0, 6);
+        yiji.ji = [
+          siJueLi.label,
+          "開張開市",
+          "嫁娶訂盟",
+          "動土安葬",
+          "遠行赴任",
+          ...yiji.ji.filter((x) => x !== siJueLi.label)
+        ].slice(0, 8);
+      }
 
       const jieqi = getJieQi(date);
-      const jieqiText = jieqi.isToday
+      let jieqiText = jieqi.isToday
         ? `今日${jieqi.name}`
         : `${jieqi.name} · ${jieqi.daysToNext}日後${jieqi.next}`;
+      if (siJueLi) {
+        jieqiText = `${siJueLi.label}（明日${siJueLi.jieqi}）`;
+      }
 
       const base = {
         weekday: `星期${WEEKDAYS[date.getDay()]}`,
@@ -3581,6 +3762,7 @@
         zodiac: `生肖 ${ZHI_TO_XIAO[yearGZ.zhi]}`,
         constellation: `星座 ${getConstellation(m, d)}`,
         jieqi: jieqiText,
+        siJueLi,
         wuxing: `${WUXING_GAN[dayGZ.gan]}${WUXING_ZHI[dayGZ.zhi]}之日`,
         nayin: getNaYin(dayGZ.full),
         chongsha: `冲${ZHI_TO_XIAO[CHONG_MAP[dayGZ.zhi]]}(${CHONG_MAP[dayGZ.zhi]}) 煞${SHA_MAP[dayGZ.zhi]}`,
@@ -3606,8 +3788,26 @@
         liuren: base.liuren,
         qimen: base.qimen,
         fangwei: base.fangwei,
-        dayGZ
+        dayGZ,
+        siJueLi
       });
+      // 四絕／四離：強制分析模式偏守，並插入顯著行動
+      if (siJueLi && base.dailyAnalysis) {
+        base.dailyAnalysis.mode = `${siJueLi.label}·宜避凶守`;
+        base.dailyAnalysis.modeKey = "guard";
+        const siAction = [
+          `【${siJueLi.label}】明日${siJueLi.jieqi}，今日氣機轉換：不宜開張、嫁娶、動土、遠行`,
+          `低調休息、清理舊務即可；重要決策與簽約盡量改到「${siJueLi.jieqi}」之後`,
+          ...(base.dailyAnalysis.actions || []).slice(0, 3)
+        ];
+        base.dailyAnalysis.actions = siAction.slice(0, 5);
+        if (base.dailyAnalysis.steps && base.dailyAnalysis.steps[0]) {
+          base.dailyAnalysis.steps = base.dailyAnalysis.steps.slice();
+          base.dailyAnalysis.steps[0] = Object.assign({}, base.dailyAnalysis.steps[0], {
+            content: `⚠ ${siJueLi.label}（明日${siJueLi.jieqi}）。` + base.dailyAnalysis.steps[0].content
+          });
+        }
+      }
       base.personals = PERSONS.map((person) => computePersonalFortune(date, base, person));
       return base;
     }
@@ -3706,6 +3906,23 @@
       document.getElementById("zodiacChip").textContent = data.zodiac;
       document.getElementById("constellationChip").textContent = data.constellation;
       document.getElementById("jieqiChip").textContent = data.jieqi;
+
+      // 四絕日／四離日高對比標註
+      const siAlert = document.getElementById("siAlert");
+      const banner = document.querySelector(".banner");
+      if (data.siJueLi) {
+        const isJue = data.siJueLi.type === "jue";
+        siAlert.className = `si-alert show ${isJue ? "jue" : "li"}`;
+        document.getElementById("siBadge").textContent = data.siJueLi.label;
+        document.getElementById("siSub").innerHTML =
+          `明日節氣：<strong>${data.siJueLi.jieqi}</strong>（${data.siJueLi.jieqiDate}）`;
+        document.getElementById("siTip").textContent = data.siJueLi.tip;
+        if (banner) banner.classList.add("has-si");
+      } else {
+        siAlert.className = "si-alert";
+        if (banner) banner.classList.remove("has-si");
+      }
+
       document.getElementById("wuxing").textContent = data.wuxing;
       document.getElementById("nayin").textContent = data.nayin;
       document.getElementById("chongsha").textContent = data.chongsha;
