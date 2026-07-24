@@ -1631,24 +1631,148 @@
       };
     }
 
-    /** 月柱：以節為界簡化 — 寅月從立春起約 2 月 */
-    function getMonthGanZhi(year, month /*1-12 solar*/) {
-      // 月支：寅=正月(約2月) … 丑=臘月(約1月)
-      // 簡化：公曆月 m → 月支索引 (m + 1) % 12，1月=丑(1), 2月=寅(2)...
-      const zhiIndex = (month + 1) % 12; // 1→2寅? wait: month1 → 2? 
-      // 常用簡化：月支 = (公曆月 + 1) % 12，且 1 月為丑
-      // month=1 → zhi=丑 index1; formula (month)%12 with map
-      // 寅月(立春後)≈2月 zhi=2, 1月≈丑 zhi=1
-      const zhi = DI_ZHI[month % 12]; // 1→丑? month%12=1 → 丑 yes; 2→寅; 12→子? 0→子 yes for Dec≈子月(冬至後) actually 12月是子月
-      // 年干決定正月干：甲己之年丙作首
+    /** 節氣 → 月建地支（寅月自立春，卯月自驚蟄…） */
+    const JIEQI_TO_YUEJIAN = {
+      立春: "寅", 雨水: "寅",
+      驚蟄: "卯", 春分: "卯",
+      清明: "辰", 穀雨: "辰",
+      立夏: "巳", 小滿: "巳",
+      芒種: "午", 夏至: "午",
+      小暑: "未", 大暑: "未",
+      立秋: "申", 處暑: "申",
+      白露: "酉", 秋分: "酉",
+      寒露: "戌", 霜降: "戌",
+      立冬: "亥", 小雪: "亥",
+      大雪: "子", 冬至: "子",
+      小寒: "丑", 大寒: "丑"
+    };
+
+    /** 月柱：以節氣月建為準（建除／青龍所依） */
+    function getMonthGanZhi(year, month /*1-12 solar*/, dateOpt) {
+      let zhi;
+      if (dateOpt) {
+        const jq = getCurrentJieQiName(dateOpt);
+        zhi = JIEQI_TO_YUEJIAN[jq] || DI_ZHI[month % 12];
+      } else {
+        // 無日期時退回公曆近似：1丑 2寅 …
+        zhi = DI_ZHI[month % 12];
+      }
+      // 五虎遁：甲己之年丙作首
       const yearGanIndex = ((year - 4) % 10 + 10) % 10;
-      // 五虎遁：甲己丙寅，乙庚戊寅，丙辛庚寅，丁壬壬寅，戊癸甲寅
       const monthGanStart = [2, 4, 6, 8, 0, 2, 4, 6, 8, 0][yearGanIndex]; // 寅月天干
-      // 寅月=2月 index，從寅起算月序
-      // 月序：寅=0 for 2月... 丑=11 for 1月
-      const monthOrder = (month + 10) % 12; // 2月→0, 3→1, ..., 1月→11
+      // 寅=0 … 丑=11
+      const monthOrder = (DI_ZHI.indexOf(zhi) - 2 + 12) % 12;
       const gan = TIAN_GAN[(monthGanStart + monthOrder) % 10];
-      return { gan, zhi: DI_ZHI[(monthOrder + 2) % 12], full: gan + DI_ZHI[(monthOrder + 2) % 12] };
+      return { gan, zhi, full: gan + zhi };
+    }
+
+    /** 日家吉神／凶神：依日干支＋月建固定推算（非隨機抽取） */
+    function getDayJiXiongShen(dayGan, dayZhi, monthZhi) {
+      // 月德：寅午戌月丙，申子辰月壬，亥卯未月甲，巳酉丑月庚
+      const yueDeMap = { 寅: "丙", 午: "丙", 戌: "丙", 申: "壬", 子: "壬", 辰: "壬", 亥: "甲", 卯: "甲", 未: "甲", 巳: "庚", 酉: "庚", 丑: "庚" };
+      // 天德簡表（月建→天德干或支）
+      const tianDeMap = {
+        寅: "丁", 卯: "坤", 辰: "壬", 巳: "辛", 午: "乾", 未: "甲",
+        申: "癸", 酉: "艮", 戌: "丙", 亥: "乙", 子: "巽", 丑: "庚"
+      };
+      const ji = [];
+      const xiong = [];
+      if (yueDeMap[monthZhi] === dayGan) ji.push("月德");
+      const td = tianDeMap[monthZhi];
+      if (td === dayGan || td === dayZhi) ji.push("天德");
+
+      // 日干對應吉神輪值（每干固定搭配，再依日支偏移取 3）
+      const ganJi = {
+        甲: ["天恩", "母倉", "時德", "福生", "天喜"],
+        乙: ["天德", "聖心", "益後", "續世", "寶光"],
+        丙: ["月恩", "天醫", "生氣", "時陽", "鳴犬"],
+        丁: ["天喜", "福生", "母倉", "時德", "天恩"],
+        戊: ["天醫", "寶光", "聖心", "益後", "續世"],
+        己: ["生氣", "鳴犬", "時陽", "天喜", "福生"],
+        庚: ["母倉", "天恩", "時德", "寶光", "聖心"],
+        辛: ["續世", "益後", "天醫", "生氣", "鳴犬"],
+        壬: ["時陽", "天喜", "福生", "母倉", "天恩"],
+        癸: ["聖心", "寶光", "續世", "益後", "天醫"]
+      };
+      const ganXiong = {
+        甲: ["月破", "大耗", "災煞", "天火", "五虛"],
+        乙: ["血忌", "歸忌", "重日", "復日", "月害"],
+        丙: ["天吏", "致死", "往亡", "不遇", "四忌"],
+        丁: ["大耗", "災煞", "天火", "五虛", "血忌"],
+        戊: ["歸忌", "重日", "復日", "月害", "天吏"],
+        己: ["致死", "往亡", "不遇", "四忌", "月破"],
+        庚: ["災煞", "天火", "五虛", "血忌", "歸忌"],
+        辛: ["重日", "復日", "月害", "天吏", "致死"],
+        壬: ["往亡", "不遇", "四忌", "月破", "大耗"],
+        癸: ["天火", "五虛", "血忌", "歸忌", "重日"]
+      };
+      const zi = DI_ZHI.indexOf(dayZhi);
+      const poolJi = ganJi[dayGan] || ganJi.甲;
+      const poolXiong = ganXiong[dayGan] || ganXiong.甲;
+      for (let k = 0; k < 3; k++) {
+        const name = poolJi[(zi + k) % poolJi.length];
+        if (!ji.includes(name)) ji.push(name);
+      }
+      for (let k = 0; k < 3; k++) {
+        const name = poolXiong[(zi + k * 2) % poolXiong.length];
+        if (!xiong.includes(name)) xiong.push(name);
+      }
+      // 破日加重
+      return {
+        jishen: ji.slice(0, 3).join("、"),
+        xiongshen: xiong.slice(0, 3).join("、")
+      };
+    }
+
+    /** 綜合宜忌：建除為底，疊加青龍黃黑道、冲煞、日干特色 */
+    function buildDayYiji(jianchu, qinglong, dayGZ) {
+      const base = JIANCHU_YIJI[jianchu] || { yi: ["平穩行事"], ji: ["衝動決策"] };
+      let yi = [...base.yi];
+      let ji = [...base.ji];
+      const chongXiao = ZHI_TO_XIAO[CHONG_MAP[dayGZ.zhi]];
+      const sha = SHA_MAP[dayGZ.zhi];
+
+      // 青龍系
+      if (qinglong && qinglong.isHuang) {
+        if (qinglong.name === "金匱" || qinglong.name === "天德") {
+          yi = ["納財", "交易", "簽約", ...yi.filter(x => !["納財", "交易"].includes(x))];
+        }
+        if (qinglong.name === "青龍" || qinglong.name === "明堂") {
+          yi = ["會友", "見貴", "出行", ...yi.filter(x => !["會友", "見貴", "出行"].includes(x))];
+        }
+        if (qinglong.name === "玉堂" || qinglong.name === "司命") {
+          yi = ["文事", "祈福", "學習", ...yi.filter(x => !["祈福", "入學"].includes(x))];
+        }
+      } else if (qinglong) {
+        ji = [`值${qinglong.name}宜慎`, ...ji];
+        if (qinglong.name === "白虎" || qinglong.name === "天刑") {
+          ji = ["爭鬥", "動刀手術（非急）", "詞訟", ...ji];
+          yi = yi.filter(x => !["嫁娶", "開市", "出行"].includes(x));
+        }
+        if (qinglong.name === "朱雀" || qinglong.name === "玄武") {
+          ji = ["口舌是非", "欺瞞失物", "立約輕率", ...ji];
+        }
+        if (qinglong.name === "天牢" || qinglong.name === "勾陳") {
+          ji = ["田土糾紛", "拘束爭持", ...ji];
+        }
+      }
+
+      // 冲煞專忌（每日必不同）
+      ji = [`冲${chongXiao}不宜硬碰`, `煞${sha}方久留`, ...ji];
+
+      // 日干微調
+      const ganYi = {
+        甲: "開創策劃", 乙: "細修整飭", 丙: "曝光表達", 丁: "潤飾文案",
+        戊: "穩固基建", 己: "協調整合", 庚: "決斷收尾", 辛: "精煉品質",
+        壬: "流通拓展", 癸: "涵養沉澱"
+      };
+      yi = [ganYi[dayGZ.gan] || "穩妥行事", ...yi];
+
+      // 去重並限制數量
+      const uniq = (arr) => [...new Set(arr)].filter(Boolean);
+      yi = uniq(yi).filter(x => !["畋獵", "結網", "取漁", "斷蟻", "塞穴"].includes(x)).slice(0, 7);
+      ji = uniq(ji).slice(0, 7);
+      return { yi, ji };
     }
 
     function getNaYin(ganZhi) {
@@ -2451,14 +2575,9 @@
 
     function computeLiuRen(date, dayGZ) {
       const yuejiang = getYueJiang(date);
-      // 占時：若查「今天」用當前時辰，否則用午時作日課
-      const now = new Date();
-      const sameDay =
-        now.getFullYear() === date.getFullYear() &&
-        now.getMonth() === date.getMonth() &&
-        now.getDate() === date.getDate();
-      const hourZhi = sameDay ? hourZhiFromDate(now) : "午";
-      const hourNote = sameDay ? "此刻" : "日課用午";
+      // 黃曆日課：固定以午時起盤，使「同一天」結果穩定、日日可比較
+      const hourZhi = "午";
+      const hourNote = "日課午時";
 
       const pan = buildTianPan(yuejiang.zhi, hourZhi);
       const kes = buildSiKe(dayGZ.gan, dayGZ.zhi, pan);
@@ -2873,169 +2992,211 @@
     }
 
     /** 從奇門 lucky 字串解析第一個吉方方向 */
+    function parseQimenDirs(luckyText) {
+      const out = { 開: null, 休: null, 生: null };
+      if (!luckyText) return out;
+      const re = /(開|休|生)門(東南|東北|西南|西北|東|南|西|北)/g;
+      let m;
+      while ((m = re.exec(String(luckyText))) !== null) {
+        out[m[1]] = m[2];
+      }
+      return out;
+    }
+
     function parseQimenFirstDir(luckyText) {
-      if (!luckyText) return null;
-      const m = String(luckyText).match(/(開|休|生)門(東南|東北|西南|西北|東|南|西|北)/);
-      if (m) return { men: m[1] + "門", dir: m[2] };
-      const m2 = String(luckyText).match(/(東南|東北|西南|西北|東|南|西|北)/);
-      return m2 ? { men: "吉門", dir: m2[1] } : null;
+      const dirs = parseQimenDirs(luckyText);
+      for (const k of ["開", "生", "休"]) {
+        if (dirs[k]) return { men: k + "門", dir: dirs[k] };
+      }
+      return null;
     }
 
     /**
      * 每日分析：1值神 2宜忌 3奇門吉方 4六壬趨吉 → 具體行動方案
+     * 文案強制帶入「日柱／建除／青龍／三傳／三門」，避免每天像同一套模板
      */
     function computeDailyAnalysis(ctx) {
       const { jianchu, qinglong, yiji, liuren, qimen, fangwei, dayGZ } = ctx;
       const jcDao = getJianChuDao(jianchu);
       const ql = qinglong || { name: "—", dao: "—", isHuang: false, hint: "" };
+      const dayPillar = dayGZ.full;
+      const chongXiao = ZHI_TO_XIAO[CHONG_MAP[dayGZ.zhi]];
+      const shaDir = SHA_MAP[dayGZ.zhi] || "北";
 
       // —— 1. 值神 ——
       const step1 = {
         title: "值神",
-        content: `建除「${jianchu}日」屬${jcDao.dao}；青龍系「${ql.name}」屬${ql.dao}${ql.hint ? `（${ql.hint.split("·")[0].trim()}）` : ""}。`
+        content: `日柱${dayPillar}。建除「${jianchu}日」屬${jcDao.dao}；青龍系「${ql.name}」屬${ql.dao}${ql.hint ? `（${ql.hint.split("·")[0].trim()}）` : ""}。`
       };
-      const zhiShenGood = jcDao.isHuang || ql.isHuang;
-      const zhiShenBad = (!jcDao.isHuang && !ql.isHuang) || ["破", "閉"].includes(jianchu) ||
-        ["白虎", "天刑", "天牢"].includes(ql.name);
 
       // —— 2. 宜忌重點 ——
-      const yiKey = (yiji.yi || []).filter(x => !["畋獵", "結網", "取漁", "斷蟻", "塞穴", "壞垣"].includes(x)).slice(0, 3);
-      const jiKey = (yiji.ji || []).filter(x => x !== "諸事不宜").slice(0, 3);
-      const yiFocus = yiKey.length ? yiKey.join("、") : "穩事、整理、守成";
-      const jiFocus = jiKey.length ? jiKey.join("、") : "衝動決策、硬碰爭執";
+      const yiKey = (yiji.yi || []).slice(0, 4);
+      const jiKey = (yiji.ji || []).slice(0, 4);
+      const yiFocus = yiKey.join("、") || "穩事、整理";
+      const jiFocus = jiKey.join("、") || "衝動決策";
       const step2 = {
         title: "宜忌重點",
-        content: `宜重點：${yiFocus}。忌重點：${jiFocus}。`
+        content: `（${dayPillar}·${jianchu}日·${ql.name}）宜：${yiFocus}。忌：${jiFocus}。`
       };
 
       // —— 3. 奇門吉方 ——
-      const qmDir = parseQimenFirstDir(qimen && qimen.lucky);
-      const luckyDir = (qmDir && qmDir.dir) || "東";
-      const luckyMen = (qmDir && qmDir.men) || "吉門";
-      const shaDir = SHA_MAP[dayGZ.zhi] || "北";
+      const qmDirs = parseQimenDirs(qimen && qimen.lucky);
+      const openDir = qmDirs.開 || qmDirs.生 || qmDirs.休 || "東";
+      const shengDir = qmDirs.生 || qmDirs.開 || openDir;
+      const xiuDir = qmDirs.休 || qmDirs.開 || openDir;
+      const luckyDir = openDir;
+      const luckyMen = qmDirs.開 ? "開門" : (qmDirs.生 ? "生門" : "休門");
       const step3 = {
         title: "奇門吉方",
         content: qimen && qimen.lucky
-          ? `吉門方位：${qimen.lucky}。優先取「${luckyMen}${luckyDir}」行動；冲煞方在「${shaDir}」，宜避。`
-          : `以方位參考為輔；冲煞方「${shaDir}」宜避。`
+          ? `${qimen.juLabel || ""}。開→${qmDirs.開 || "—"}、生→${qmDirs.生 || "—"}、休→${qmDirs.休 || "—"}。冲${chongXiao}、煞${shaDir}宜避。`
+          : `冲${chongXiao}、煞${shaDir}宜避。`
       };
 
       // —— 4. 六壬趨吉 ——
       const chuan = liuren && liuren.sanchuan;
-      let lrTone = "穩";
-      let lrText = "六壬宜穩步推進，不抄近路。";
+      let lrScore = 0;
+      let lrText = "六壬宜穩步推進。";
       if (chuan) {
         if (chuan.method.includes("伏吟")) {
-          lrTone = "守";
-          lrText = `六壬「伏吟」，心思易打轉：今日決策可暫緩，先安神再動。三傳${chuan.chu}→${chuan.zhong}→${chuan.mo}。`;
+          lrScore = -2;
+          lrText = `六壬伏吟：三傳${chuan.chu}→${chuan.zhong}→${chuan.mo}，心思易轉圈，大事緩決。`;
         } else if (chuan.method.includes("返吟")) {
-          lrTone = "慎";
-          lrText = `六壬「返吟」多反覆：合約、口頭承諾、路線皆宜再確認。三傳${chuan.chu}→${chuan.zhong}→${chuan.mo}。`;
+          lrScore = -1;
+          lrText = `六壬返吟：三傳${chuan.chu}→${chuan.zhong}→${chuan.mo}，反覆多，合約再確認。`;
         } else if (chuan.method.includes("重審") || chuan.method.includes("元首")) {
-          lrTone = "進";
-          lrText = `六壬「${chuan.method}」有動象：可順初傳「${chuan.chu}」之勢推進，但留退路。末傳歸「${chuan.mo}」。`;
+          lrScore = 2;
+          lrText = `六壬${chuan.method}：初傳${chuan.chu}有動，中${chuan.zhong}末${chuan.mo}，可進但留退路。`;
+        } else if (chuan.method.includes("比用")) {
+          lrScore = 1;
+          lrText = `六壬比用：三傳${chuan.chu}→${chuan.zhong}→${chuan.mo}，擇一正途專攻即可。`;
         } else {
-          lrTone = "穩";
-          lrText = `六壬三傳${chuan.chu}→${chuan.zhong}→${chuan.mo}（${chuan.method}），步步為營最穩。`;
+          lrScore = 0;
+          lrText = `六壬${chuan.method}：三傳${chuan.chu}→${chuan.zhong}→${chuan.mo}，步步為營。`;
         }
       }
       const step4 = { title: "六壬趨吉重點", content: lrText };
 
-      // —— 歸納模式 ——
-      let mode = "穩中求進";
-      let modeKey = "steady";
-      if (zhiShenBad || lrTone === "守" || ["破", "閉", "危"].includes(jianchu)) {
-        mode = "宜守低調";
-        modeKey = "guard";
-      } else if (zhiShenGood && (lrTone === "進" || ["成", "開", "滿", "定"].includes(jianchu)) && ql.isHuang) {
-        mode = "可積極趨吉";
-        modeKey = "open";
-      } else if (lrTone === "慎" || !ql.isHuang) {
-        mode = "審慎行事";
-        modeKey = "careful";
-      }
+      // —— 綜合分數決定模式（每天更容易拉開差距）——
+      let score = 50;
+      score += jcDao.isHuang ? 8 : -6;
+      score += ql.isHuang ? 10 : -10;
+      if (["成", "開", "滿"].includes(jianchu)) score += 12;
+      if (["定", "執", "危"].includes(jianchu)) score += 4;
+      if (["建", "除", "收"].includes(jianchu)) score += 0;
+      if (["破", "閉"].includes(jianchu)) score -= 16;
+      if (["平"].includes(jianchu)) score -= 2;
+      if (["白虎", "天刑", "天牢"].includes(ql.name)) score -= 12;
+      if (["青龍", "明堂", "金匱", "天德"].includes(ql.name)) score += 8;
+      score += lrScore * 6;
+      // 日支微擾（固定可重現）
+      score += (DI_ZHI.indexOf(dayGZ.zhi) % 5) - 2;
+      score = clamp(score, 5, 95);
 
-      // —— 具體行動方案 ——
+      let mode, modeKey;
+      if (score >= 72) { mode = "大吉進取"; modeKey = "open"; }
+      else if (score >= 58) { mode = "小吉可為"; modeKey = "mild"; }
+      else if (score >= 45) { mode = "平穩守中"; modeKey = "steady"; }
+      else if (score >= 32) { mode = "審慎收斂"; modeKey = "careful"; }
+      else { mode = "宜避凶守"; modeKey = "guard"; }
+
+      const yi0 = yiKey[0] || "穩妥一事";
+      const yi1 = yiKey[1] || yi0;
+      const ji0 = jiKey[0] || "衝動決策";
+      const ji1 = jiKey[1] || ji0;
+
+      // —— 行動：三門分用 + 日柱標籤，保證日日文案不同 ——
       const actions = [];
-      if (modeKey === "open") {
-        actions.push(`往【${luckyDir}】方向放一杯清水（開流納氣，象徵事情能走得通）`);
-        actions.push(`面朝【${luckyDir}】做 3 次意向呼吸：吸氣想「我願意成事」，呼氣想「阻滯散去」`);
-        actions.push(`主動推進宜事重點「${yiFocus.split("、")[0]}」，今日有機會就出手、見好就收`);
-        actions.push(`避開【${shaDir}】方久留與爭執；忌事「${jiFocus.split("、")[0]}」能延則延`);
-      } else if (modeKey === "guard") {
-        actions.push(`低調休息為上：減少社交應酬與高風險決策，能推明天的就推明天`);
-        actions.push(`做 5 分鐘意向呼吸（吸4秒－停2秒－呼6秒），把心從焦慮裡拉回身體`);
-        actions.push(`僅在【${luckyDir}】方向輕放清水或開窗通風即可，不必張揚作法`);
-        actions.push(`堅守忌事底線：今日不碰「${jiFocus}」；口舌、爭鬥、大額支出一律暫停`);
-      } else if (modeKey === "careful") {
-        actions.push(`往【${luckyDir}】方向放水，心中默念「流通不滯、小心謹慎」`);
-        actions.push(`做 3 輪意向呼吸後再回覆重要訊息，避免情緒性發言`);
-        actions.push(`可做宜事「${yiFocus.split("、")[0]}」，但採小步驗證、不一次梭哈`);
-        actions.push(`黑道／返吟日特徵：合約與承諾多看一眼；避開【${shaDir}】方硬碰`);
+      actions.push(
+        `【${dayPillar}·${jianchu}·${ql.name}】往【${openDir}】（開門／主進）放清水一杯，心念「${yi0}得通」。`
+      );
+      actions.push(
+        `面朝【${shengDir}】（生門）做意向呼吸 3 次：吸想「生機來」，呼想「${ji0}去」。`
+      );
+      if (modeKey === "open" || modeKey === "mild") {
+        actions.push(
+          `今日主攻「${yi0}／${yi1}」；可排在上午，並在【${xiuDir}】（休門）方向短暫歇息充電。`
+        );
+        actions.push(
+          `避煞方【${shaDir}】、少與「${chongXiao}」生肖硬碰；忌「${ji0}、${ji1}」。六壬看${chuan ? chuan.chu + "→" + chuan.mo : "穩步"}。`
+        );
+      } else if (modeKey === "guard" || modeKey === "careful") {
+        actions.push(
+          `主調：低調休息／收斂。僅保留必要的「${yi0}」；能延的「${ji0}」一律延後。`
+        );
+        actions.push(
+          `在【${xiuDir}】方向靜坐或散步 10 分鐘；避開【${shaDir}】與冲${chongXiao}。六壬：${chuan ? chuan.method + "·" + chuan.chu : "宜靜"}。`
+        );
       } else {
-        actions.push(`往【${luckyDir}】方向放一杯清水，象徵今日氣機順暢`);
-        actions.push(`做 3 次意向呼吸，默想今日唯一最重要的一件事`);
-        actions.push(`依宜忌穩步執行「${yiFocus.split("、")[0]}」，不貪多、不硬衝`);
-        actions.push(`避【${shaDir}】方是非；忌「${jiFocus.split("、")[0]}」，守住節奏`);
+        actions.push(
+          `穩中求進：完成一件「${yi0}」即可，不貪多；「${yi1}」可作備案。`
+        );
+        actions.push(
+          `休整走【${xiuDir}】，避【${shaDir}】是非；忌「${ji0}」。六壬三傳${chuan ? chuan.chu + chuan.zhong + chuan.mo : "—"}。`
+        );
       }
-
-      // 方位參考補一句
       if (fangwei) {
-        actions.push(`可參考喜神／財神方位：${fangwei}（洽公、收款時朝吉方坐）`);
+        actions.push(`喜神財神：${fangwei}；穿著或座位可朝吉方，強化今日「${ql.name}${ql.dao}」氣場。`);
       }
 
       return {
-        mode,
+        mode: `${mode}（${score}）`,
         modeKey,
+        score,
         steps: [step1, step2, step3, step4],
         actions: actions.slice(0, 5),
-        luckyDir,
+        luckyDir: openDir,
+        shengDir,
+        xiuDir,
         luckyMen,
         shaDir,
         yiFocus,
         jiFocus,
         jianchu,
+        dayPillar,
         qinglongName: ql.name,
         qinglongDao: ql.dao
       };
     }
 
-    /** 個人化今日行動（結合日分析 + 本命冲合） */
+    /** 個人化今日行動（結合日分析 + 本命冲合）— 帶入日柱與分數，避免千篇一律 */
     function buildPersonalDayActions(person, daily, rel, scores) {
       const dir = daily.luckyDir || "東";
+      const sheng = daily.shengDir || dir;
+      const xiu = daily.xiuDir || dir;
       const sha = daily.shaDir || "北";
       const isFemale = person.gender === "female";
+      const dayTag = daily.dayPillar || "";
       const list = [];
+      const yi0 = (daily.yiFocus || "穩事").split("、")[0];
+      const ji0 = (daily.jiFocus || "衝動").split("、")[0];
 
-      // 依本命關係微調
+      list.push(
+        `【今日行動·${person.xiao}·${dayTag}】模式「${daily.mode}」；本命${rel.label}`
+      );
+
       if (rel.key === "冲" || rel.key === "害") {
-        list.push(`【今日行動】本命${rel.key === "冲" ? "相冲" : "六害"}：以「低調休息」為主，大事可緩一日`);
-        list.push(`往【${dir}】方向放水即可，不做張揚儀式；避開【${sha}】方爭執`);
-        list.push(`意向呼吸加長到 5 分鐘，先安情緒再回覆${isFemale ? "感情與工作" : "公事與人情"}訊息`);
+        list.push(`冲害日：以【${xiu}】休養生息為主，大事緩一日；往【${dir}】只輕放清水`);
+        list.push(`意向呼吸 5 分鐘後再處理${isFemale ? "感情／工作" : "公事／人情"}；忌【${sha}】方爭執與「${ji0}」`);
       } else if (rel.key === "合" || rel.key === "三合") {
-        list.push(`【今日行動】本命相合：可順勢往【${dir}】方洽談、請託或連繫貴人`);
-        list.push(`面朝【${dir}】做 3 次意向呼吸後，主動完成一件「宜：${daily.yiFocus.split("、")[0]}」`);
-        list.push(`合日仍忌衝動：不碰「${daily.jiFocus.split("、")[0]}」，偏財${scores.pianCai >= 70 ? "可小試、勿梭哈" : "宜守正財"}`);
-      } else if (daily.modeKey === "guard") {
-        list.push(`【今日行動】${person.xiao}命今日宜守：低調休息、少開新局`);
-        list.push(`往【${dir}】輕放清水 + 意向呼吸 5 分鐘；穿${person.luckyColors.slice(0, 2).join("、")}色助運`);
-        list.push(`避開【${sha}】方；忌「${daily.jiFocus.split("、")[0]}」`);
-      } else if (daily.modeKey === "open") {
-        list.push(`【今日行動】${person.xiao}命可積極趨吉：往【${dir}】放水開流`);
-        list.push(`面朝【${dir}】意向呼吸 3 次，推進「${daily.yiFocus.split("、")[0]}」`);
-        list.push(`見好就收；避【${sha}】方口舌；${isFemale ? "感情表達宜溫柔明確" : "簡報提案宜一次說清楚"}`);
+        list.push(`合日：可往【${dir}】洽談請託；面朝【${sheng}】呼吸 3 次後做「${yi0}」`);
+        list.push(`仍忌「${ji0}」；偏財${scores.pianCai >= 70 ? "可小試設停損" : "守正財"}；穿${person.luckyColors.slice(0, 2).join("、")}`);
+      } else if (daily.modeKey === "open" || daily.modeKey === "mild") {
+        list.push(`${person.xiao}命偏開：【${dir}】放水開流，【${sheng}】方向推進「${yi0}」`);
+        list.push(`見好就收；避【${sha}】；${isFemale ? "表達宜溫柔明確" : "提案一次說清"}；忌「${ji0}」`);
+      } else if (daily.modeKey === "guard" || daily.modeKey === "careful") {
+        list.push(`${person.xiao}命宜守：【${xiu}】低調休息，少開新局；【${dir}】僅輕放水`);
+        list.push(`呼吸安神；避【${sha}】與「${ji0}」；穿${person.luckyColors.slice(0, 2).join("、")}調和`);
       } else {
-        list.push(`【今日行動】往【${dir}】放水、做 3 次意向呼吸，穩中求進`);
-        list.push(`執行宜事「${daily.yiFocus.split("、")[0]}」；低調處理忌事「${daily.jiFocus.split("、")[0]}」`);
-        list.push(`穿${person.luckyColors.slice(0, 2).join("、")}；避【${sha}】方硬碰`);
+        list.push(`穩進：【${dir}】放水＋【${sheng}】呼吸；完成「${yi0}」一件即可`);
+        list.push(`忌「${ji0}」；避【${sha}】；穿${person.luckyColors.slice(0, 2).join("、")}`);
       }
 
-      // 偏財／健康微調一句
-      if (scores.pianCai < 45) list.push(`偏財弱：今日不跟風投資、不借貸作保`);
-      else if (scores.pianCai >= 75) list.push(`偏財有氣：只做小額可控嘗試，設停損`);
-      if (scores.health < 50) list.push(`體力偏弱：早睡、清淡飲食，運動改散步即可`);
+      if (scores.pianCai < 45) list.push(`偏財${scores.pianCai}分偏弱：不跟風、不擔保`);
+      else if (scores.pianCai >= 75) list.push(`偏財${scores.pianCai}分有氣：小額可試、預設停損`);
+      if (scores.health < 50) list.push(`健康${scores.health}分：早睡清淡，運動改散步`);
 
-      return list.slice(0, 4);
+      return list.slice(0, 5);
     }
 
     function buildTijiTip(person, ctx) {
@@ -3373,12 +3534,14 @@
       const d = date.getDate();
       const lunar = solarToLunar(date);
       const yearGZ = getYearGanZhi(lunar.year);
-      const monthGZ = getMonthGanZhi(y, m);
+      // 月建依節氣（建除／青龍／月柱一致）
+      const monthGZ = getMonthGanZhi(y, m, date);
       const dayGZ = getDayGanZhi(date);
       const jianchu = getJianChu(dayGZ.zhi, monthGZ.zhi);
       const qinglong = getQingLongShen(dayGZ.zhi, monthGZ.zhi);
-      const yiji = JIANCHU_YIJI[jianchu];
-      const seed = y * 10000 + m * 100 + d + dayGZ.gan.charCodeAt(0);
+      // 宜忌：建除＋青龍＋冲煞＋日干（每日組合不同）
+      const yiji = buildDayYiji(jianchu, qinglong, dayGZ);
+      const gods = getDayJiXiongShen(dayGZ.gan, dayGZ.zhi, monthGZ.zhi);
 
       const jieqi = getJieQi(date);
       const jieqiText = jieqi.isToday
@@ -3399,8 +3562,8 @@
         zhishenParts: formatZhishenParts(jianchu, qinglong),
         zhishenPlain: `建除${jianchu}日 · 青龍系${qinglong.name}（${qinglong.dao}）`,
         qinglong,
-        jishen: pickStable(JISHEN_LIST, seed, 3).join("、"),
-        xiongshen: pickStable(XIONGSHEN_LIST, seed + 7, 3).join("、"),
+        jishen: gods.jishen,
+        xiongshen: gods.xiongshen,
         fangwei: getDirections(dayGZ.gan),
         yi: yiji.yi,
         ji: yiji.ji,
