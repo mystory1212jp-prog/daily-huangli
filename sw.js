@@ -1,5 +1,5 @@
 /* 每日黃曆 Service Worker — 離線可開啟 */
-const CACHE = "huangli-v17";
+const CACHE = "huangli-v18";
 const ASSETS = [
   "./",
   "./index.html",
@@ -10,9 +10,11 @@ const ASSETS = [
   "./lib/huangli-db.js",
   "./lib/analysis-engine.js",
   "./lib/personal-system.js",
+  "./lib/jieqi-yangsheng.js",
   "./data/core-db.json",
   "./data/mapping-db.json",
   "./data/personal-bazi.json",
+  "./data/jieqi-yangsheng.json",
   "./data/daily-facts-2024.json",
   "./data/daily-facts-2025.json",
   "./data/daily-facts-2026.json",

@@ -35,12 +35,23 @@
 
 前端 `PersonalFortuneEngine` 將結構化 JSON 轉成現代生活建議；同時附帶 `llmPayload` 供未來 Batch API。
 
+## 節氣養生庫
+
+| 檔案 | 說明 |
+|------|------|
+| `jieqi-yangsheng.json` | 二十四節氣養生全文（zh-Hant + 預留 ja） |
+| `lib/jieqi-yangsheng.js` | 嵌入同源資料 + `JieqiYangsheng` 引擎 |
+
+依 `HUANGLI_DB.jieqi`／`HuangliEngine.currentJieQiName` 判定當前節氣與「今日交節」。
+
 ## 重建
 
 ```bash
 pip3 install -r requirements.txt
 python3 scripts/build_db.py
 python3 scripts/build_personal_system.py
+# 修改 data/jieqi-yangsheng.json 後，可再執行：
+# python3 -c "..." 或手動同步嵌入 lib/jieqi-yangsheng.js
 ```
 
 ## 授權說明

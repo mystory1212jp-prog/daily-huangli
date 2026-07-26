@@ -520,6 +520,157 @@
 
     .daily-analysis .da-body { padding: 12px 12px 14px; }
 
+    /* ===== 節氣養生 ===== */
+    .jieqi-ys {
+      margin: 14px 0 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(45, 107, 74, 0.28);
+      background: linear-gradient(165deg, #f0f7f3 0%, #fffdf8 50%, #f5efe3 100%);
+      box-shadow: 0 6px 18px rgba(30, 60, 40, 0.07);
+      overflow: hidden;
+    }
+    .jieqi-ys > summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 12px 14px;
+      background: linear-gradient(120deg, #1e4a36 0%, #2f6b4c 55%, #3d7a58 100%);
+      color: #e8f5ec;
+      font-family: "Noto Serif TC", serif;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      user-select: none;
+    }
+    .jieqi-ys > summary::-webkit-details-marker { display: none; }
+    .jieqi-ys > summary::after {
+      content: "▾";
+      font-size: 0.85rem;
+      opacity: 0.85;
+      transition: transform 0.2s;
+    }
+    .jieqi-ys:not([open]) > summary::after { transform: rotate(-90deg); }
+    .jieqi-ys .jys-title {
+      font-size: 1.02rem;
+      letter-spacing: 0.14em;
+    }
+    .jieqi-ys .jys-head-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .jieqi-ys .jys-badge {
+      font-family: "Noto Sans TC", sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(232, 245, 236, 0.35);
+    }
+    .jieqi-ys .jys-badge.today {
+      background: #c9a227;
+      color: #2a1a08;
+      border-color: rgba(255, 255, 255, 0.35);
+      animation: jys-pulse 2s ease-in-out infinite;
+    }
+    @keyframes jys-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(201, 162, 39, 0.45); }
+      50% { box-shadow: 0 0 0 6px rgba(201, 162, 39, 0); }
+    }
+    .jieqi-ys .jys-body { padding: 12px 14px 14px; }
+    .jieqi-ys .jys-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+    .jieqi-ys .jys-wx,
+    .jieqi-ys .jys-zang {
+      font-size: 0.78rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(31, 107, 58, 0.1);
+      border: 1px solid rgba(31, 107, 58, 0.22);
+      color: #1a4d2e;
+      letter-spacing: 0.06em;
+    }
+    .jieqi-ys .jys-body .jys-badge.today {
+      font-size: 0.72rem;
+    }
+    .jieqi-ys .jys-summary {
+      font-family: "Noto Serif TC", serif;
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .jieqi-ys .jys-next {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+      letter-spacing: 0.04em;
+    }
+    .jieqi-ys .jys-block {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255, 253, 248, 0.85);
+      border: 1px solid rgba(45, 107, 74, 0.12);
+    }
+    .jieqi-ys .jys-block h5 {
+      font-family: "Noto Serif TC", serif;
+      font-size: 0.88rem;
+      letter-spacing: 0.12em;
+      color: #1a4d2e;
+      margin: 0 0 6px;
+    }
+    .jieqi-ys .jys-block p {
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: var(--ink);
+      margin: 0;
+    }
+    .jieqi-ys .jys-focus,
+    .jieqi-ys .jys-herbs {
+      margin: 0;
+      padding-left: 1.15em;
+      font-size: 0.88rem;
+      line-height: 1.55;
+      color: var(--ink);
+    }
+    .jieqi-ys .jys-focus li,
+    .jieqi-ys .jys-herbs li { margin: 4px 0; }
+    .jieqi-ys .jys-bencao {
+      display: block;
+      margin-top: 2px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+    .jieqi-ys .jys-block.herbs {
+      border-color: rgba(201, 162, 39, 0.35);
+      background: linear-gradient(180deg, #fffdf6 0%, #faf3e0 100%);
+    }
+    .jieqi-ys .jys-disc {
+      margin: 12px 0 0;
+      font-size: 0.7rem;
+      color: var(--muted);
+      line-height: 1.5;
+      letter-spacing: 0.02em;
+    }
+    .jieqi-ys .jys-empty {
+      padding: 8px 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
     .da-steps {
       display: flex;
       flex-direction: column;
@@ -1328,6 +1479,17 @@
           </div>
         </section>
 
+        <!-- 節氣養生提醒：可摺疊，預設展開 -->
+        <details class="jieqi-ys" id="jieqiYangsheng" open>
+          <summary>
+            <span class="jys-title" id="jysTitle">節氣養生｜—</span>
+            <span class="jys-head-right">
+              <span class="jys-badge today" id="jysTodayBadge" hidden>今日交節</span>
+            </span>
+          </summary>
+          <div class="jys-body" id="jysBody" aria-live="polite">—</div>
+        </details>
+
         <div class="section-title">日辰要覽</div>
         <div class="meta-grid">
           <div class="meta-item">
@@ -1461,6 +1623,7 @@
   <script src="lib/huangli-db.js"></script>
   <script src="lib/analysis-engine.js"></script>
   <script src="lib/personal-system.js"></script>
+  <script src="lib/jieqi-yangsheng.js"></script>
   <script>
     /* ========== 常數 ========== */
     const TIAN_GAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
@@ -4053,6 +4216,35 @@
       return out;
     }
 
+    /** 節氣養生區塊：確定性節氣名 + JSON 養生庫 */
+    function renderJieqiYangsheng(date, almanacData) {
+      const titleEl = document.getElementById("jysTitle");
+      const badgeEl = document.getElementById("jysTodayBadge");
+      const bodyEl = document.getElementById("jysBody");
+      if (!titleEl || !bodyEl) return;
+
+      if (!window.JieqiYangsheng || typeof JieqiYangsheng.getYangsheng !== "function") {
+        titleEl.textContent = "節氣養生｜—";
+        if (badgeEl) badgeEl.hidden = true;
+        bodyEl.innerHTML = '<div class="jys-empty">養生資料未載入</div>';
+        return;
+      }
+
+      const pack = JieqiYangsheng.getYangsheng(date, { locale: "zh-Hant" });
+      if (almanacData) almanacData.jieqiYangsheng = pack;
+
+      titleEl.textContent = `節氣養生｜${pack.name || "—"}`;
+      if (badgeEl) {
+        badgeEl.hidden = !pack.isToday;
+        badgeEl.textContent = "今日交節";
+      }
+      // 交節日預設展開；其餘維持使用者摺疊狀態（不強制改 open）
+      const box = document.getElementById("jieqiYangsheng");
+      if (box && pack.isToday) box.open = true;
+
+      bodyEl.innerHTML = JieqiYangsheng.renderHtml(pack);
+    }
+
     async function render(date) {
       let data = computeAlmanac(date);
       // 開源資料庫＋天時引擎：強化每日分析／兩人運勢（配合節氣旺衰、十神喜用）
@@ -4119,6 +4311,9 @@
       `).join("");
       document.getElementById("daActions").innerHTML =
         da.actions.map(a => `<li>${a}</li>`).join("");
+
+      // 節氣養生（優先 huangli-db 節氣表）
+      renderJieqiYangsheng(date, data);
 
       // 大六壬
       const lr = data.liuren;
