@@ -3097,6 +3097,7 @@
     }
 
     /* ========== 個人檔（可多人）========== */
+    // baziLocked：與 lunar_python EightChar 精算對齊（勿用心算改柱）
     const PERSONS = [
       {
         id: "p1985",
@@ -3115,7 +3116,8 @@
         traitDo: "檢查細節、校對文件、優化流程",
         traitDont: "完美主義過度苛責自己或他人",
         wxTone: "乙丑土氣",
-        summaryTone: "處女座"
+        summaryTone: "處女座",
+        baziLocked: { year: "乙丑", month: "甲申", day: "己亥", time: "戊辰" }
       },
       {
         id: "p1995",
@@ -3134,9 +3136,15 @@
         traitDo: "深度思考、獨處充電、溫柔表達真心",
         traitDont: "把情緒悶在心裡或過度猜疑",
         wxTone: "乙亥水氣",
-        summaryTone: "天蠍座"
+        summaryTone: "天蠍座",
+        baziLocked: { year: "乙亥", month: "丙戌", day: "癸卯", time: "甲寅" }
       }
     ];
+
+    function parsePillar(full) {
+      if (!full || full.length < 2) return null;
+      return { gan: full[0], zhi: full[1], full: full.slice(0, 2) };
+    }
 
     /* ========== 皇極數 · 元會運世 · 讖言 ========== */
     // 一元=12會=30運×12=4320世；以「年」為小元，月→會、日→運、時→世
@@ -3287,41 +3295,48 @@
 
 
     /**
-     * 出生／當日 → 皇極元會運世數序
-     * 小元法：一年為一元之象；月為會(1–12)、日為運(1–30)、時支為世(1–12)
-     * 年序以甲子年為元1…甲子循環60，對應「元」之細分
+     * 皇極元會運世（對齊生辰／流日八字四柱）
+     * 元＝年柱六十甲子序(1–60)
+     * 會＝月支自寅起(寅1…丑12)＝節氣月建
+     * 運＝日柱甲子序折 1–30
+     * 世＝時支(子1…亥12)
+     * 流日「定日」固定以午時取世，避免同一天因當前時刻換時辰導致讖言亂跳
      */
-    function toHuangjiShuxu(year, month, day, hourZhi) {
-      const yuan = ((year - 4) % 60 + 60) % 60 + 1; // 甲子年=1
-      const hui = ((month - 1) % 12) + 1;
-      const yun = Math.min(30, Math.max(1, day)); // 皇極運以三十為限
-      const shi = DI_ZHI.indexOf(hourZhi) + 1;
-      // 一年內數序（1～4320，合一元之世數）
+    function pillarsToHuangjiShuxu(yearGZ, monthGZ, dayGZ, hourGZ, meta) {
+      const yuan = jiaZiIndex(yearGZ.gan, yearGZ.zhi) + 1;
+      const hui = ((DI_ZHI.indexOf(monthGZ.zhi) - 2 + 12) % 12) + 1;
+      const yun = (jiaZiIndex(dayGZ.gan, dayGZ.zhi) % 30) + 1;
+      const shi = DI_ZHI.indexOf(hourGZ.zhi) + 1;
       const yearXu = (hui - 1) * 360 + (yun - 1) * 12 + shi;
-      // 跨年總序（便於本命定位）
       const totalXu = (yuan - 1) * 4320 + yearXu;
-      // 卦序、讖索引（64）
-      const guaIdx = (yearXu - 1) % 64;
+      const guaIdx = ((totalXu - 1) % 64 + 64) % 64;
+      const pillarsLabel = `${yearGZ.full} ${monthGZ.full} ${dayGZ.full} ${hourGZ.full}`;
       return {
         yuan, hui, yun, shi, yearXu, totalXu, guaIdx,
+        yearGZ: yearGZ.full,
+        monthGZ: monthGZ.full,
+        dayGZ: dayGZ.full,
+        timeGZ: hourGZ.full,
+        pillarsLabel,
         label: `元${yuan}·會${hui}·運${yun}·世${shi}`,
-        yearXuLabel: `年內序第${yearXu}`,
+        yearXuLabel: `柱內序第${yearXu}`,
+        totalXuLabel: `總序第${totalXu}`,
         gua: HUANGJI_GUA64[guaIdx],
         chenwen: HUANGJI_CHENWEN[guaIdx],
-        baihua: HUANGJI_BAIHUA[guaIdx]
+        baihua: HUANGJI_BAIHUA[guaIdx],
+        meta: meta || null
       };
     }
 
     /** 歷史尺度元會運世（堯甲辰起算簡推，供對照） */
     function historicalYuanHuiYunShi(year) {
-      // 帝堯甲辰約西元前2357；午會為第七會
       const YAO = -2357;
       let elapsed = year - YAO;
       if (elapsed < 0) elapsed = 0;
       const HUI_YEARS = 10800;
       const YUN_YEARS = 360;
       const SHI_YEARS = 30;
-      const huiIdx = Math.floor(elapsed / HUI_YEARS) % 12; // 0=子會
+      const huiIdx = Math.floor(elapsed / HUI_YEARS) % 12;
       const remHui = elapsed % HUI_YEARS;
       const yunIdx = Math.floor(remHui / YUN_YEARS) % 30;
       const remYun = remHui % YUN_YEARS;
@@ -3336,17 +3351,17 @@
     }
 
     /**
-     * 本命數序 × 當天數序 → 應驗讖文
-     * 對應元會運世資料：取當日年內數序與本命年內數序合成應驗序
+     * 本命總序（含年柱元）× 流日柱內序 → 應驗讖文
+     * 同一公曆日固定午時流日，結果穩定可重現
      */
     function resolveHuangjiYingyan(birthXu, dayXu) {
-      // 應驗序：本命序與流日序相會（合一元4320之循環後歸64卦）
-      const yingXu = ((birthXu.yearXu - 1 + dayXu.yearXu - 1) % 4320) + 1;
+      const yingXu = ((birthXu.totalXu - 1 + dayXu.yearXu - 1) % 4320) + 1;
       const guaIdx = (yingXu - 1) % 64;
-      const dayDirectIdx = (dayXu.yearXu - 1) % 64;
+      const dayDirectIdx = (dayXu.totalXu - 1) % 64;
       return {
         yingXu,
         yingLabel: `應驗序第${yingXu}`,
+        formula: `(本命總序${birthXu.totalXu} + 流日柱內序${dayXu.yearXu} − 1) mod 4320`,
         gua: HUANGJI_GUA64[guaIdx],
         chenwen: HUANGJI_CHENWEN[guaIdx],
         baihua: HUANGJI_BAIHUA[guaIdx],
@@ -3358,36 +3373,72 @@
       };
     }
 
-    function computePersonHuangji(person, date) {
-      ensurePersonProfile(person);
-      const [by, bm, bd] = person.birthSolar.split("-").map(Number);
-      const hourZhi = person.birthHour || "午";
-      const birthXu = toHuangjiShuxu(by, bm, bd, hourZhi);
+    /** 流日四柱（定日用午時） */
+    function flowDayPillars(date) {
       const y = date.getFullYear();
       const m = date.getMonth() + 1;
       const d = date.getDate();
-      // 當天時：今日用當前時辰，否則午
-      const now = new Date();
-      const sameDay =
-        now.getFullYear() === y && now.getMonth() + 1 === m && now.getDate() === d;
-      const dayHour = sameDay ? hourZhiFromDate(now) : "午";
-      const dayXu = toHuangjiShuxu(y, m, d, dayHour);
+      const noon = new Date(y, m - 1, d, 12, 0, 0, 0);
+      const lunar = solarToLunar(noon);
+      let yearGZ = getYearGanZhi(lunar.year);
+      // 立春前仍屬前一年干支：若當前節氣為小寒／大寒，年柱退一年
+      const jq = (window.HuangliEngine && HuangliEngine.currentJieQiName)
+        ? HuangliEngine.currentJieQiName(y, m, d)
+        : getCurrentJieQiName(noon);
+      if (jq === "小寒" || jq === "大寒") {
+        yearGZ = getYearGanZhi(lunar.year - 1);
+      }
+      let monthGZ = getMonthGanZhi(y, m, noon);
+      if (window.HuangliEngine && HuangliEngine.yueJian && jq) {
+        const zhi = HuangliEngine.yueJian(jq);
+        const yearGanIndex = TIAN_GAN.indexOf(yearGZ.gan);
+        const monthGanStart = [2, 4, 6, 8, 0, 2, 4, 6, 8, 0][yearGanIndex];
+        const monthOrder = (DI_ZHI.indexOf(zhi) - 2 + 12) % 12;
+        const gan = TIAN_GAN[(monthGanStart + monthOrder) % 10];
+        monthGZ = { gan, zhi, full: gan + zhi };
+      }
+      const dayGZ = getDayGanZhi(noon);
+      const hourZhi = "午"; // 定日
+      const hourGZ = getHourGanZhi(dayGZ.gan, hourZhi);
+      return { yearGZ, monthGZ, dayGZ, hourGZ, hourZhi, jq };
+    }
+
+    function computePersonHuangji(person, date) {
+      ensurePersonProfile(person);
+      const birthYear = person.birthYearGZ;
+      const birthMonth = person.birthMonthGZ;
+      const birthDay = person.birthDayGZ;
+      const birthHour = person.birthHourGZ;
+      const birthXu = pillarsToHuangjiShuxu(
+        birthYear, birthMonth, birthDay, birthHour,
+        { kind: "本命", solar: person.birthSolar }
+      );
+
+      const flow = flowDayPillars(date);
+      const dayXu = pillarsToHuangjiShuxu(
+        flow.yearGZ, flow.monthGZ, flow.dayGZ, flow.hourGZ,
+        { kind: "流日定午", jq: flow.jq }
+      );
+
+      const y = date.getFullYear();
       const hist = historicalYuanHuiYunShi(y);
       const ying = resolveHuangjiYingyan(birthXu, dayXu);
-      const hourGZ = getHourGanZhi(person.birthDayGZ.gan, hourZhi);
+
       return {
         birthSolar: person.birthSolar,
-        birthHour: hourZhi,
-        birthHourPillar: hourGZ.full,
+        birthHour: birthHour.zhi,
+        birthHourPillar: birthHour.full,
+        birthBazi: birthXu.pillarsLabel,
+        flowBazi: dayXu.pillarsLabel,
         birthXu,
         dayXu,
         hist,
         ying,
-        // 主要展示：應驗讖言 + 白話（本命×當日）
         displayChenwen: ying.chenwen,
         displayBaihua: ying.baihua,
         displayGua: ying.gua,
-        displayYingXu: ying.yingXu
+        displayYingXu: ying.yingXu,
+        aligned: true
       };
     }
 
@@ -3456,25 +3507,50 @@
     function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
 
     function ensurePersonProfile(person) {
-      if (person.birthDayGZ) return person;
+      if (person.birthDayGZ && person.birthYearGZ && person.birthMonthGZ && person.birthHourGZ) {
+        return person;
+      }
       const d = parseDateKey(person.birthSolar);
       d.setHours(12, 0, 0, 0);
       const [by, bm, bd] = person.birthSolar.split("-").map(Number);
       const lunar = solarToLunar(d);
-      const yearGZ = getYearGanZhi(lunar.year);
-      const dayGZ = getDayGanZhi(d);
-      const monthGZ = getMonthGanZhi(by, bm);
       const hourZhi = person.birthHour || "午";
-      const hourGZ = getHourGanZhi(dayGZ.gan, hourZhi);
+
+      // 優先：lunar_python 鎖定四柱（與 personal-bazi / 精算一致）
+      let yearGZ, monthGZ, dayGZ, hourGZ;
+      if (person.baziLocked) {
+        yearGZ = parsePillar(person.baziLocked.year);
+        monthGZ = parsePillar(person.baziLocked.month);
+        dayGZ = parsePillar(person.baziLocked.day);
+        hourGZ = parsePillar(person.baziLocked.time);
+        // 若 PersonalFortuneEngine 有同 id 檔，再覆寫一次（同源）
+        if (window.PersonalFortuneEngine && Array.isArray(PersonalFortuneEngine.profiles)) {
+          const ep = PersonalFortuneEngine.profiles.find((p) => p.id === person.id);
+          if (ep) {
+            yearGZ = parsePillar(ep.year) || yearGZ;
+            monthGZ = parsePillar(ep.month) || monthGZ;
+            dayGZ = parsePillar(ep.day) || dayGZ;
+            hourGZ = parsePillar(ep.time) || hourGZ;
+          }
+        }
+      } else {
+        yearGZ = getYearGanZhi(lunar.year);
+        dayGZ = getDayGanZhi(d);
+        monthGZ = getMonthGanZhi(by, bm, d);
+        hourGZ = getHourGanZhi(dayGZ.gan, hourZhi);
+      }
+
       person.birthDayGZ = dayGZ;
       person.birthYearGZ = yearGZ;
       person.birthMonthGZ = monthGZ;
       person.birthHourGZ = hourGZ;
+      person.birthHour = hourGZ.zhi;
       person.birthLunar = lunar;
       person.yearGan = yearGZ.gan;
       person.yearZhi = yearGZ.zhi;
       person.xiao = ZHI_TO_XIAO[yearGZ.zhi];
       person.constellation = getConstellation(bm, bd);
+      person.baziLine = `${yearGZ.full} ${monthGZ.full} ${dayGZ.full} ${hourGZ.full}`;
       person.titleHint = `${yearGZ.full}${person.xiao} · ${person.constellation}` +
         (person.gender === "female" ? " · 女" : person.gender === "male" ? "" : "");
       return person;
@@ -4010,7 +4086,9 @@
         chips: [
           `生肖 ${person.xiao}`,
           person.genderLabel ? `性別 ${person.genderLabel}` : null,
+          `四柱 ${person.birthYearGZ.full}${person.birthMonthGZ.full}${birthDay.full}${person.birthHourGZ ? person.birthHourGZ.full : ""}`,
           `年柱 ${person.birthYearGZ.full}`,
+          `月柱 ${person.birthMonthGZ.full}`,
           `日柱 ${birthDay.full}`,
           `時柱 ${person.birthHourGZ ? person.birthHourGZ.full : (person.birthHour || "—")}`,
           `星座 ${person.constellation}`,
@@ -4180,21 +4258,24 @@
               <h4>皇極數讖言</h4>
               <div class="huangji-meta">
                 <div class="hm">
-                  <span class="k">本命數序（出生）</span>
+                  <span class="k">本命八字 → 數序</span>
                   <span class="v">${p.huangji.birthXu.label}</span>
-                  <div class="zs-hint">${p.person.birthSolar.replace(/-/g, ".")}${p.huangji.birthHour}時 · 時柱${p.huangji.birthHourPillar} · ${p.huangji.birthXu.yearXuLabel}</div>
+                  <div class="zs-hint">四柱 ${p.huangji.birthBazi || p.huangji.birthXu.pillarsLabel}</div>
+                  <div class="zs-hint">${p.person.birthSolar.replace(/-/g, ".")}${p.huangji.birthHour}時 · ${p.huangji.birthXu.totalXuLabel} · 對卦${p.huangji.birthXu.gua}</div>
                 </div>
                 <div class="hm">
-                  <span class="k">當天數序（元會運世）</span>
+                  <span class="k">流日八字（定午）→ 數序</span>
                   <span class="v">${p.huangji.dayXu.label}</span>
-                  <div class="zs-hint">史尺 ${p.huangji.hist.label} · ${p.huangji.dayXu.yearXuLabel}</div>
+                  <div class="zs-hint">四柱 ${p.huangji.flowBazi || p.huangji.dayXu.pillarsLabel}</div>
+                  <div class="zs-hint">史尺 ${p.huangji.hist.label} · ${p.huangji.dayXu.yearXuLabel} · 對卦${p.huangji.dayXu.gua}</div>
                 </div>
               </div>
               <div class="huangji-chen">
                 <span class="hc-label">應驗讖言 · 序第${p.huangji.displayYingXu}</span>
-                <div class="hc-gua">值卦：${p.huangji.displayGua}（本命×流日合成）</div>
+                <div class="hc-gua">值卦：${p.huangji.displayGua}（本命總序×流日柱序合成）</div>
                 <div class="hc-wen">${p.huangji.displayChenwen}</div>
                 <div class="hc-bai"><span class="hc-bai-label">白話說明</span>${p.huangji.displayBaihua || ""}</div>
+                <div class="zs-hint" style="margin-top:8px;opacity:0.85">${p.huangji.ying && p.huangji.ying.formula ? p.huangji.ying.formula : ""}</div>
               </div>
             </div>
             ` : ""}
