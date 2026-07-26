@@ -402,6 +402,56 @@
       background: linear-gradient(90deg, transparent, rgba(201, 162, 39, 0.7), transparent);
     }
 
+    /* 通用摺疊區塊（日辰要覽等） */
+    .fold-section {
+      margin: 4px 0 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(201, 162, 39, 0.35);
+      background: linear-gradient(180deg, #fffdf8 0%, #f7efe0 100%);
+      box-shadow: 0 4px 14px rgba(80, 30, 10, 0.06);
+      overflow: hidden;
+    }
+    .fold-section > summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      background: linear-gradient(120deg, #5c1a1a 0%, #8b2a2a 50%, #a33 100%);
+      color: var(--gold-pale);
+      font-family: "Noto Serif TC", serif;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.18em;
+      user-select: none;
+    }
+    .fold-section > summary::-webkit-details-marker { display: none; }
+    .fold-section > summary::after {
+      content: "▾";
+      font-size: 0.85rem;
+      opacity: 0.9;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .fold-section:not([open]) > summary::after { transform: rotate(-90deg); }
+    .fold-section .fold-hint {
+      font-family: "Noto Sans TC", sans-serif;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      opacity: 0.85;
+      margin-left: auto;
+      margin-right: 4px;
+    }
+    .fold-section .fold-body {
+      padding: 12px 12px 14px;
+    }
+    .fold-section .meta-grid {
+      margin-bottom: 0;
+    }
+
     .meta-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -1136,6 +1186,32 @@
       font-family: "Noto Sans TC", sans-serif;
     }
 
+    .quote .pengzu-classic {
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .quote .pengzu-advice {
+      display: block;
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(201, 162, 39, 0.4);
+      font-family: "Noto Sans TC", sans-serif;
+      font-size: 0.88rem;
+      line-height: 1.65;
+      color: var(--ink);
+      letter-spacing: 0.02em;
+    }
+
+    .quote .pengzu-advice .pa-label {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--red-deep);
+      letter-spacing: 0.12em;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
     /* ===== 個人運勢 ===== */
     .personal-list {
       display: flex;
@@ -1490,106 +1566,113 @@
           <div class="jys-body" id="jysBody" aria-live="polite">—</div>
         </details>
 
-        <div class="section-title">日辰要覽</div>
-        <div class="meta-grid">
-          <div class="meta-item">
-            <div class="label">五行</div>
-            <div class="value" id="wuxing">—</div>
-          </div>
-          <div class="meta-item">
-            <div class="label">納音</div>
-            <div class="value" id="nayin">—</div>
-          </div>
-          <div class="meta-item">
-            <div class="label">冲煞</div>
-            <div class="value" id="chongsha">—</div>
-          </div>
-          <div class="meta-item">
-            <div class="label">建除值神</div>
-            <div class="value" id="zhishenJianchu">—</div>
-          </div>
-          <div class="meta-item">
-            <div class="label">青龍值神</div>
-            <div class="value" id="zhishenQinglong">—</div>
-          </div>
-          <div class="meta-item">
-            <div class="label">黃黑道</div>
-            <div class="value" id="zhishenDao">—</div>
-          </div>
-          <div class="meta-item">
-            <div class="label">吉神宜趨</div>
-            <div class="value" id="jishen">—</div>
-          </div>
-          <div class="meta-item">
-            <div class="label">凶神宜忌</div>
-            <div class="value" id="xiongshen">—</div>
-          </div>
-          <div class="meta-item full">
-            <div class="label">方位參考</div>
-            <div class="value" id="fangwei">—</div>
-          </div>
+        <details class="fold-section" id="richenFold">
+          <summary>
+            <span>日辰要覽</span>
+            <span class="fold-hint">五行 · 神煞 · 六壬 · 奇門</span>
+          </summary>
+          <div class="fold-body">
+            <div class="meta-grid">
+              <div class="meta-item">
+                <div class="label">五行</div>
+                <div class="value" id="wuxing">—</div>
+              </div>
+              <div class="meta-item">
+                <div class="label">納音</div>
+                <div class="value" id="nayin">—</div>
+              </div>
+              <div class="meta-item">
+                <div class="label">冲煞</div>
+                <div class="value" id="chongsha">—</div>
+              </div>
+              <div class="meta-item">
+                <div class="label">建除值神</div>
+                <div class="value" id="zhishenJianchu">—</div>
+              </div>
+              <div class="meta-item">
+                <div class="label">青龍值神</div>
+                <div class="value" id="zhishenQinglong">—</div>
+              </div>
+              <div class="meta-item">
+                <div class="label">黃黑道</div>
+                <div class="value" id="zhishenDao">—</div>
+              </div>
+              <div class="meta-item">
+                <div class="label">吉神宜趨</div>
+                <div class="value" id="jishen">—</div>
+              </div>
+              <div class="meta-item">
+                <div class="label">凶神宜忌</div>
+                <div class="value" id="xiongshen">—</div>
+              </div>
+              <div class="meta-item full">
+                <div class="label">方位參考</div>
+                <div class="value" id="fangwei">—</div>
+              </div>
 
-          <div class="liuren-box" id="liurenBox">
-            <div class="label">大六壬日課</div>
-            <div class="liuren-grid">
-              <div class="row">
-                <span class="k">月將</span>
-                <span class="v" id="lrYuejiang">—</span>
+              <div class="liuren-box" id="liurenBox">
+                <div class="label">大六壬日課</div>
+                <div class="liuren-grid">
+                  <div class="row">
+                    <span class="k">月將</span>
+                    <span class="v" id="lrYuejiang">—</span>
+                  </div>
+                  <div class="row">
+                    <span class="k">占時</span>
+                    <span class="v" id="lrZhanshi">—</span>
+                  </div>
+                  <div class="row">
+                    <span class="k">旬空</span>
+                    <span class="v" id="lrXunkong">—</span>
+                  </div>
+                  <div class="row">
+                    <span class="k">貴人</span>
+                    <span class="v" id="lrGuiren">—</span>
+                  </div>
+                  <div class="row span2">
+                    <span class="k">日辰寄宮</span>
+                    <span class="v" id="lrJigong">—</span>
+                  </div>
+                </div>
+                <div class="liuren-ke" id="lrSike"></div>
+                <div class="liuren-chuan" id="lrSanchuan"></div>
+                <div class="liuren-note" id="lrNote">以月將加時起天地盤 · 四課三傳 · 僅供參考</div>
               </div>
-              <div class="row">
-                <span class="k">占時</span>
-                <span class="v" id="lrZhanshi">—</span>
-              </div>
-              <div class="row">
-                <span class="k">旬空</span>
-                <span class="v" id="lrXunkong">—</span>
-              </div>
-              <div class="row">
-                <span class="k">貴人</span>
-                <span class="v" id="lrGuiren">—</span>
-              </div>
-              <div class="row span2">
-                <span class="k">日辰寄宮</span>
-                <span class="v" id="lrJigong">—</span>
+
+              <div class="liuren-box qimen-box" id="qimenBox">
+                <div class="label">奇門遁甲（日家 · 拆補）</div>
+                <div class="liuren-grid">
+                  <div class="row">
+                    <span class="k">用局</span>
+                    <span class="v" id="qmJu">—</span>
+                  </div>
+                  <div class="row">
+                    <span class="k">用日</span>
+                    <span class="v" id="qmShi">—</span>
+                  </div>
+                  <div class="row">
+                    <span class="k">值符</span>
+                    <span class="v" id="qmZhifu">—</span>
+                  </div>
+                  <div class="row">
+                    <span class="k">值使</span>
+                    <span class="v" id="qmZhishi">—</span>
+                  </div>
+                  <div class="row span2">
+                    <span class="k">三奇六儀 · 空亡</span>
+                    <span class="v" id="qmMeta">—</span>
+                  </div>
+                  <div class="row span2">
+                    <span class="k">吉門方位（開／休／生）</span>
+                    <span class="v" id="qmLucky">—</span>
+                  </div>
+                </div>
+                <div class="qm-board" id="qmBoard" aria-label="奇門九宮盤"></div>
+                <div class="liuren-note" id="qmNote">日家奇門拆補法 · 以日干支起盤 · 僅供民俗參考</div>
               </div>
             </div>
-            <div class="liuren-ke" id="lrSike"></div>
-            <div class="liuren-chuan" id="lrSanchuan"></div>
-            <div class="liuren-note" id="lrNote">以月將加時起天地盤 · 四課三傳 · 僅供參考</div>
           </div>
-
-          <div class="liuren-box qimen-box" id="qimenBox">
-            <div class="label">奇門遁甲（日家 · 拆補）</div>
-            <div class="liuren-grid">
-              <div class="row">
-                <span class="k">用局</span>
-                <span class="v" id="qmJu">—</span>
-              </div>
-              <div class="row">
-                <span class="k">用日</span>
-                <span class="v" id="qmShi">—</span>
-              </div>
-              <div class="row">
-                <span class="k">值符</span>
-                <span class="v" id="qmZhifu">—</span>
-              </div>
-              <div class="row">
-                <span class="k">值使</span>
-                <span class="v" id="qmZhishi">—</span>
-              </div>
-              <div class="row span2">
-                <span class="k">三奇六儀 · 空亡</span>
-                <span class="v" id="qmMeta">—</span>
-              </div>
-              <div class="row span2">
-                <span class="k">吉門方位（開／休／生）</span>
-                <span class="v" id="qmLucky">—</span>
-              </div>
-            </div>
-            <div class="qm-board" id="qmBoard" aria-label="奇門九宮盤"></div>
-            <div class="liuren-note" id="qmNote">日家奇門拆補法 · 以日干支起盤 · 僅供民俗參考</div>
-          </div>
-        </div>
+        </details>
 
         <div class="section-title">今日宜忌</div>
         <div class="yi-ji">
@@ -1606,7 +1689,11 @@
         <div class="section-title">彭祖百忌</div>
         <div class="quote">
           <span class="q-label">今日宜謹記</span>
-          <span id="pengzu">—</span>
+          <span class="pengzu-classic" id="pengzu">—</span>
+          <span class="pengzu-advice" id="pengzuAdvice" hidden>
+            <span class="pa-label">生活白話建議</span>
+            <span id="pengzuAdviceText">—</span>
+          </span>
         </div>
 
         <div class="section-title" style="margin-top: 20px;">個人專屬運勢</div>
@@ -1697,6 +1784,42 @@
       午: "午不苫蓋屋主更張", 未: "未不服藥毒氣入腸", 申: "申不安床鬼祟入房",
       酉: "酉不會客醉坐顛狂", 戌: "戌不吃犬作怪上床", 亥: "亥不嫁娶不利新郎"
     };
+
+    /** 彭祖百忌 → 現代生活白話（對應日干、日支各一則） */
+    const PENGZU_ADVICE = {
+      甲: "少動大額存款、庫存出清或急著「開倉」式花費；重要金流進出多核對一遍。",
+      乙: "不宜硬推從零開始的長線計畫或栽種式投資；已開始的事可養、新芽可緩。",
+      丙: "少動廚房大改、瓦斯爐具與明火相關整修；用火用電多留意安全。",
+      丁: "非必要不做大變髮型、頭部侵入美容或手術；保養以溫和為主。",
+      戊: "不宜急簽買地、大片責任承包；不動產與「接大田」式承諾可再緩一日。",
+      己: "少撕破臉解約、強行廢止文件；合約爭議先冷靜溝通，勿衝動蓋章或撕毀。",
+      庚: "不宜開針灸經絡類新療程，也少空轉無效的流水線硬推；先對齊再動手。",
+      辛: "少推出尚未熟成的產品或醃釀類「合醬」事務；品質未穩前先內部覆核。",
+      壬: "少涉水遠遊、游泳潛水；留意漏水、淹水與防水，戶外近水多小心。",
+      癸: "不宜興訟硬槓、對簿公堂；爭執先協商，理弱時更忌意氣用事。",
+      子: "少為小事反復問卜或過度依賴他人決策；自己先想清楚再問人。",
+      丑: "不宜就職上任、冠帶儀式或正式換身分；重要「穿上新角色」可另擇日。",
+      寅: "正式祭拜、許願儀式宜從簡；心存敬意即可，不必大張旗鼓。",
+      卯: "不宜新鑿井、開挖深坑或動基礎水源工程；基礎設施開挖改日較穩。",
+      辰: "情緒大悲大慟時給自己緩衝，喪葬與傷心事沉穩處理，勿硬撐逞強。",
+      巳: "少安排遠途出差旅行；財物收妥少露白，貴重物品不離身。",
+      午: "不宜蓋屋頂、封頂裝修或大動屋舍結構；住家大改可改期。",
+      未: "非急症少試新藥、偏方或來路不明保健品；用藥務必遵醫囑。",
+      申: "不宜換床安床、大搬臥室床具；睡眠環境大調整可另擇日。",
+      酉: "少大宴賓客、飲酒過量；聚會宜節制，避免醉後失言失態。",
+      戌: "飲食求潔淨，少吃來路不明的肉食；寵物與居家衛生多留意。",
+      亥: "不宜嫁娶訂盟、重大情感承諾；喜事與名分大事可另擇吉日。"
+    };
+
+    function buildPengzuAdvice(dayGan, dayZhi) {
+      const a = PENGZU_ADVICE[dayGan];
+      const b = PENGZU_ADVICE[dayZhi];
+      if (!a && !b) return "";
+      const parts = [];
+      if (a) parts.push(`【日干·${dayGan}】${a}`);
+      if (b) parts.push(`【日支·${dayZhi}】${b}`);
+      return parts.join(" ");
+    }
 
     const CHONG_MAP = {
       子: "午", 丑: "未", 寅: "申", 卯: "酉", 辰: "戌", 巳: "亥",
@@ -3979,6 +4102,7 @@
         yi: yiji.yi,
         ji: yiji.ji,
         pengzu: `${PENGZU[dayGZ.gan]}，${PENGZU[dayGZ.zhi]}`,
+        pengzuAdvice: buildPengzuAdvice(dayGZ.gan, dayGZ.zhi),
         liuren: computeLiuRen(date, dayGZ),
         qimen: computeQimen(date, dayGZ),
         // for personal
@@ -4296,6 +4420,17 @@
       document.getElementById("xiongshen").textContent = data.xiongshen;
       document.getElementById("fangwei").textContent = data.fangwei;
       document.getElementById("pengzu").textContent = data.pengzu;
+      const pengzuAdviceEl = document.getElementById("pengzuAdvice");
+      const pengzuAdviceText = document.getElementById("pengzuAdviceText");
+      if (pengzuAdviceEl && pengzuAdviceText) {
+        if (data.pengzuAdvice) {
+          pengzuAdviceText.textContent = data.pengzuAdvice;
+          pengzuAdviceEl.hidden = false;
+        } else {
+          pengzuAdviceText.textContent = "";
+          pengzuAdviceEl.hidden = true;
+        }
+      }
 
       // 每日分析 + 今日行動（置於日辰要覽上方）
       const da = data.dailyAnalysis;
