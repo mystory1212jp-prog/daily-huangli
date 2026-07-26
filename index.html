@@ -1487,6 +1487,41 @@
       line-height: 1.6;
     }
 
+    /* 語言切換 */
+    .lang-bar {
+      display: flex;
+      justify-content: flex-end;
+      margin: 0 0 10px;
+    }
+    .lang-toggle {
+      appearance: none;
+      border: 1px solid rgba(201, 162, 39, 0.55);
+      background: linear-gradient(180deg, #fffdf8, #f3e8c8);
+      color: var(--red-deep);
+      font-family: "Noto Sans TC", "Noto Serif JP", sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 7px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(80, 30, 10, 0.08);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .lang-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(80, 30, 10, 0.12);
+    }
+    .lang-toggle:active { transform: translateY(0); }
+    html[lang="ja"] body {
+      font-family: "Noto Sans TC", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    }
+    html[lang="ja"] .app-header h1,
+    html[lang="ja"] .section-title,
+    html[lang="ja"] .daily-analysis .da-head h3 {
+      letter-spacing: 0.08em;
+    }
+
     @media (max-width: 420px) {
       .banner .solar { font-size: 1.35rem; }
       .meta-grid { gap: 8px; }
@@ -1496,27 +1531,31 @@
 </head>
 <body>
   <div class="wrap">
+    <div class="lang-bar">
+      <button type="button" class="lang-toggle" id="langToggle" title="切換為日本語">日本語</button>
+    </div>
+
     <div class="install-tip" id="installTip" role="status">
-      <strong>加到 iPhone 主畫面</strong>，之後可像 App 一樣點開查詢（離線也能用）：<br />
-      1. 點 Safari 底部<strong>分享</strong>（方框＋向上箭頭）<br />
-      2. 往下滑選 <strong>加入主畫面</strong> → 加入
+      <strong data-i18n="installTitle">加到 iPhone 主畫面</strong><span data-i18n="installBody">，之後可像 App 一樣點開查詢（離線也能用）：</span><br />
+      <span data-i18n="installStep1">1. 點 Safari 底部</span><strong data-i18n="installShare">分享</strong><span data-i18n="installStep1b">（方框＋向上箭頭）</span><br />
+      <span data-i18n="installStep2">2. 往下滑選</span> <strong data-i18n="installAdd">加入主畫面</strong> <span data-i18n="installStep2b">→ 加入</span>
       <div class="tip-actions">
-        <button type="button" class="btn-ok" id="tipGotIt">知道了</button>
-        <button type="button" class="btn-hide" id="tipNever">不再顯示</button>
+        <button type="button" class="btn-ok" id="tipGotIt" data-i18n="gotIt">知道了</button>
+        <button type="button" class="btn-hide" id="tipNever" data-i18n="neverShow">不再顯示</button>
       </div>
     </div>
 
     <header class="app-header">
-      <div class="seal">曆</div>
-      <h1>每日黃曆</h1>
-      <p>擇日 · 宜忌 · 干支</p>
+      <div class="seal" data-i18n="seal">曆</div>
+      <h1 data-i18n="appTitle">每日黃曆</h1>
+      <p data-i18n="appSubtitle">擇日 · 宜忌 · 干支</p>
     </header>
 
     <div class="date-nav">
-      <button type="button" id="prevDay" aria-label="前一天">‹</button>
+      <button type="button" id="prevDay" data-i18n-aria="prevDay" aria-label="前一天">‹</button>
       <input type="date" id="datePicker" />
-      <button type="button" id="nextDay" aria-label="後一天">›</button>
-      <button type="button" class="today-btn" id="todayBtn">今日</button>
+      <button type="button" id="nextDay" data-i18n-aria="nextDay" aria-label="後一天">›</button>
+      <button type="button" class="today-btn" id="todayBtn" data-i18n="today">今日</button>
     </div>
 
     <article class="card" id="almanac">
@@ -1536,21 +1575,21 @@
       <div class="si-alert" id="siAlert" role="alert" aria-live="polite">
         <div class="si-badge" id="siBadge">—</div>
         <div class="si-sub" id="siSub">—</div>
-        <div class="si-tip" id="siTip">諸事不宜開張、嫁娶、動土、遠行；宜守成、靜養</div>
+        <div class="si-tip" id="siTip" data-i18n="siTipDefault">諸事不宜開張、嫁娶、動土、遠行；宜守成、靜養</div>
       </div>
 
       <div class="body">
-        <section class="daily-analysis" id="dailyAnalysis" aria-label="每日分析與今日行動">
+        <section class="daily-analysis" id="dailyAnalysis" data-i18n-aria="dailyAnalysisAria" aria-label="每日分析與今日行動">
           <div class="da-head">
-            <h3>每日分析</h3>
+            <h3 data-i18n="dailyAnalysis">每日分析</h3>
             <span class="da-mode" id="daMode">—</span>
           </div>
           <div class="da-body">
             <div class="da-steps" id="daSteps"></div>
             <div class="da-actions">
-              <h4>今日行動方案</h4>
+              <h4 data-i18n="todayActions">今日行動方案</h4>
               <ol id="daActions"></ol>
-              <div class="da-foot">依值神 → 宜忌 → 奇門 → 六壬 四步歸納 · 僅供民俗參考</div>
+              <div class="da-foot" data-i18n="daFoot">依值神 → 宜忌 → 奇門 → 六壬 四步歸納 · 僅供民俗參考</div>
             </div>
           </div>
         </section>
@@ -1560,7 +1599,7 @@
           <summary>
             <span class="jys-title" id="jysTitle">節氣養生｜—</span>
             <span class="jys-head-right">
-              <span class="jys-badge today" id="jysTodayBadge" hidden>今日交節</span>
+              <span class="jys-badge today" id="jysTodayBadge" hidden data-i18n="jysToday">今日交節</span>
             </span>
           </summary>
           <div class="jys-body" id="jysBody" aria-live="polite">—</div>
@@ -1568,145 +1607,146 @@
 
         <details class="fold-section" id="richenFold">
           <summary>
-            <span>日辰要覽</span>
-            <span class="fold-hint">五行 · 神煞 · 六壬 · 奇門</span>
+            <span data-i18n="richenTitle">日辰要覽</span>
+            <span class="fold-hint" data-i18n="richenHint">五行 · 神煞 · 六壬 · 奇門</span>
           </summary>
           <div class="fold-body">
             <div class="meta-grid">
               <div class="meta-item">
-                <div class="label">五行</div>
+                <div class="label" data-i18n="labelWuxing">五行</div>
                 <div class="value" id="wuxing">—</div>
               </div>
               <div class="meta-item">
-                <div class="label">納音</div>
+                <div class="label" data-i18n="labelNayin">納音</div>
                 <div class="value" id="nayin">—</div>
               </div>
               <div class="meta-item">
-                <div class="label">冲煞</div>
+                <div class="label" data-i18n="labelChongsha">冲煞</div>
                 <div class="value" id="chongsha">—</div>
               </div>
               <div class="meta-item">
-                <div class="label">建除值神</div>
+                <div class="label" data-i18n="labelJianchu">建除值神</div>
                 <div class="value" id="zhishenJianchu">—</div>
               </div>
               <div class="meta-item">
-                <div class="label">青龍值神</div>
+                <div class="label" data-i18n="labelQinglong">青龍值神</div>
                 <div class="value" id="zhishenQinglong">—</div>
               </div>
               <div class="meta-item">
-                <div class="label">黃黑道</div>
+                <div class="label" data-i18n="labelHuanghei">黃黑道</div>
                 <div class="value" id="zhishenDao">—</div>
               </div>
               <div class="meta-item">
-                <div class="label">吉神宜趨</div>
+                <div class="label" data-i18n="labelJishen">吉神宜趨</div>
                 <div class="value" id="jishen">—</div>
               </div>
               <div class="meta-item">
-                <div class="label">凶神宜忌</div>
+                <div class="label" data-i18n="labelXiongshen">凶神宜忌</div>
                 <div class="value" id="xiongshen">—</div>
               </div>
               <div class="meta-item full">
-                <div class="label">方位參考</div>
+                <div class="label" data-i18n="labelFangwei">方位參考</div>
                 <div class="value" id="fangwei">—</div>
               </div>
 
               <div class="liuren-box" id="liurenBox">
-                <div class="label">大六壬日課</div>
+                <div class="label" data-i18n="liurenTitle">大六壬日課</div>
                 <div class="liuren-grid">
                   <div class="row">
-                    <span class="k">月將</span>
+                    <span class="k" data-i18n="lrYuejiang">月將</span>
                     <span class="v" id="lrYuejiang">—</span>
                   </div>
                   <div class="row">
-                    <span class="k">占時</span>
+                    <span class="k" data-i18n="lrZhanshi">占時</span>
                     <span class="v" id="lrZhanshi">—</span>
                   </div>
                   <div class="row">
-                    <span class="k">旬空</span>
+                    <span class="k" data-i18n="lrXunkong">旬空</span>
                     <span class="v" id="lrXunkong">—</span>
                   </div>
                   <div class="row">
-                    <span class="k">貴人</span>
+                    <span class="k" data-i18n="lrGuiren">貴人</span>
                     <span class="v" id="lrGuiren">—</span>
                   </div>
                   <div class="row span2">
-                    <span class="k">日辰寄宮</span>
+                    <span class="k" data-i18n="lrJigong">日辰寄宮</span>
                     <span class="v" id="lrJigong">—</span>
                   </div>
                 </div>
                 <div class="liuren-ke" id="lrSike"></div>
                 <div class="liuren-chuan" id="lrSanchuan"></div>
-                <div class="liuren-note" id="lrNote">以月將加時起天地盤 · 四課三傳 · 僅供參考</div>
+                <div class="liuren-note" id="lrNote" data-i18n="lrNote">以月將加時起天地盤 · 四課三傳 · 僅供參考</div>
               </div>
 
               <div class="liuren-box qimen-box" id="qimenBox">
-                <div class="label">奇門遁甲（日家 · 拆補）</div>
+                <div class="label" data-i18n="qimenTitle">奇門遁甲（日家 · 拆補）</div>
                 <div class="liuren-grid">
                   <div class="row">
-                    <span class="k">用局</span>
+                    <span class="k" data-i18n="qmJu">用局</span>
                     <span class="v" id="qmJu">—</span>
                   </div>
                   <div class="row">
-                    <span class="k">用日</span>
+                    <span class="k" data-i18n="qmShi">用日</span>
                     <span class="v" id="qmShi">—</span>
                   </div>
                   <div class="row">
-                    <span class="k">值符</span>
+                    <span class="k" data-i18n="qmZhifu">值符</span>
                     <span class="v" id="qmZhifu">—</span>
                   </div>
                   <div class="row">
-                    <span class="k">值使</span>
+                    <span class="k" data-i18n="qmZhishi">值使</span>
                     <span class="v" id="qmZhishi">—</span>
                   </div>
                   <div class="row span2">
-                    <span class="k">三奇六儀 · 空亡</span>
+                    <span class="k" data-i18n="qmMeta">三奇六儀 · 空亡</span>
                     <span class="v" id="qmMeta">—</span>
                   </div>
                   <div class="row span2">
-                    <span class="k">吉門方位（開／休／生）</span>
+                    <span class="k" data-i18n="qmLucky">吉門方位（開／休／生）</span>
                     <span class="v" id="qmLucky">—</span>
                   </div>
                 </div>
                 <div class="qm-board" id="qmBoard" aria-label="奇門九宮盤"></div>
-                <div class="liuren-note" id="qmNote">日家奇門拆補法 · 以日干支起盤 · 僅供民俗參考</div>
+                <div class="liuren-note" id="qmNote" data-i18n="qmNote">日家奇門拆補法 · 以日干支起盤 · 僅供民俗參考</div>
               </div>
             </div>
           </div>
         </details>
 
-        <div class="section-title">今日宜忌</div>
+        <div class="section-title" data-i18n="yijiTitle">今日宜忌</div>
         <div class="yi-ji">
           <div class="yi-box">
-            <h3>宜</h3>
+            <h3 data-i18n="yi">宜</h3>
             <div class="tag-list" id="yiList"></div>
           </div>
           <div class="ji-box">
-            <h3>忌</h3>
+            <h3 data-i18n="ji">忌</h3>
             <div class="tag-list" id="jiList"></div>
           </div>
         </div>
 
-        <div class="section-title">彭祖百忌</div>
+        <div class="section-title" data-i18n="pengzuTitle">彭祖百忌</div>
         <div class="quote">
-          <span class="q-label">今日宜謹記</span>
+          <span class="q-label" data-i18n="pengzuLabel">今日宜謹記</span>
           <span class="pengzu-classic" id="pengzu">—</span>
           <span class="pengzu-advice" id="pengzuAdvice" hidden>
-            <span class="pa-label">生活白話建議</span>
+            <span class="pa-label" data-i18n="pengzuAdviceLabel">生活白話建議</span>
             <span id="pengzuAdviceText">—</span>
           </span>
         </div>
 
-        <div class="section-title" style="margin-top: 20px;">個人專屬運勢</div>
-        <div class="personal-list" id="personalList" aria-label="個人運勢列表"></div>
+        <div class="section-title" style="margin-top: 20px;" data-i18n="personalTitle">個人專屬運勢</div>
+        <div class="personal-list" id="personalList" data-i18n-aria="personalAria" aria-label="個人運勢列表"></div>
       </div>
     </article>
 
     <footer>
-      傳統黃曆文化參考 · 個人運勢＝lunar_python 精算＋三維映射語意轉譯<br />
-      僅供趣味與民俗參考 · 非專業命理／擇日依據
+      <span data-i18n="footer1">傳統黃曆文化參考 · 個人運勢＝lunar_python 精算＋三維映射語意轉譯</span><br />
+      <span data-i18n="footer2">僅供趣味與民俗參考 · 非專業命理／擇日依據</span>
     </footer>
   </div>
 
+  <script src="lib/i18n.js"></script>
   <script src="lib/huangli-db.js"></script>
   <script src="lib/analysis-engine.js"></script>
   <script src="lib/personal-system.js"></script>
@@ -1812,13 +1852,21 @@
     };
 
     function buildPengzuAdvice(dayGan, dayZhi) {
-      const a = PENGZU_ADVICE[dayGan];
-      const b = PENGZU_ADVICE[dayZhi];
+      const isJa = window.I18N && I18N.isJa();
+      const table = isJa && I18N.pengzuAdviceJa ? I18N.pengzuAdviceJa : PENGZU_ADVICE;
+      const a = table[dayGan] || PENGZU_ADVICE[dayGan];
+      const b = table[dayZhi] || PENGZU_ADVICE[dayZhi];
       if (!a && !b) return "";
+      const gLabel = (window.I18N && I18N.t("pengzuGan")) || "日干";
+      const zLabel = (window.I18N && I18N.t("pengzuZhi")) || "日支";
       const parts = [];
-      if (a) parts.push(`【日干·${dayGan}】${a}`);
-      if (b) parts.push(`【日支·${dayZhi}】${b}`);
+      if (a) parts.push(`【${gLabel}·${dayGan}】${a}`);
+      if (b) parts.push(`【${zLabel}·${dayZhi}】${b}`);
       return parts.join(" ");
+    }
+
+    function t(key, params) {
+      return window.I18N ? I18N.t(key, params) : key;
     }
 
     const CHONG_MAP = {
@@ -2316,10 +2364,12 @@
           if (key(prev) === todayKey) {
             return {
               type: "jue",
-              label: "四絕日",
+              label: t("siJue"),
               jieqi: name,
               jieqiDate: key(jqDate),
-              tip: `明日即「${name}」。四絕日諸事不宜，忌開張、嫁娶、動土、安葬、遠行；宜靜守、清理、休整。`
+              tip: (window.I18N && I18N.isJa())
+                ? `明日は「${name}」。四絶日は諸事を控え、開業・婚姻・土木・埋葬・遠行を忌み、静守・整理・休息を。`
+                : `明日即「${name}」。四絕日諸事不宜，忌開張、嫁娶、動土、安葬、遠行；宜靜守、清理、休整。`
             };
           }
         }
@@ -2332,10 +2382,12 @@
           if (key(prev) === todayKey) {
             return {
               type: "li",
-              label: "四離日",
+              label: t("siLi"),
               jieqi: name,
               jieqiDate: key(jqDate),
-              tip: `明日即「${name}」。四離日氣機轉換，忌開張、嫁娶、動土、訂盟；宜收心、守成、少起爭端。`
+              tip: (window.I18N && I18N.isJa())
+                ? `明日は「${name}」。四離日は気機の転換。開業・婚姻・土木・盟約を忌み、収心・守成・争いを控える。`
+                : `明日即「${name}」。四離日氣機轉換，忌開張、嫁娶、動土、訂盟；宜收心、守成、少起爭端。`
             };
           }
         }
@@ -4063,18 +4115,18 @@
         lunarShort,
         aspects: isFemale
           ? [
-              { name: "事業", score: career },
-              { name: "財運", score: wealth },
-              { name: "偏財", score: pianCai },
-              { name: "感情", score: love },
-              { name: "健康", score: health }
+              { name: t("aspectCareer"), score: career },
+              { name: t("aspectWealth"), score: wealth },
+              { name: t("aspectSide"), score: pianCai },
+              { name: t("aspectLove"), score: love },
+              { name: t("aspectHealth"), score: health }
             ]
           : [
-              { name: "事業", score: career },
-              { name: "財運", score: wealth },
-              { name: "偏財", score: pianCai },
-              { name: "人際", score: social },
-              { name: "健康", score: health }
+              { name: t("aspectCareer"), score: career },
+              { name: t("aspectWealth"), score: wealth },
+              { name: t("aspectSide"), score: pianCai },
+              { name: t("aspectSocial"), score: social },
+              { name: t("aspectHealth"), score: health }
             ],
         yi,
         ji,
@@ -4084,16 +4136,16 @@
         tijiTip,
         huangji,
         chips: [
-          `生肖 ${person.xiao}`,
-          person.genderLabel ? `性別 ${person.genderLabel}` : null,
-          `四柱 ${person.birthYearGZ.full}${person.birthMonthGZ.full}${birthDay.full}${person.birthHourGZ ? person.birthHourGZ.full : ""}`,
-          `年柱 ${person.birthYearGZ.full}`,
-          `月柱 ${person.birthMonthGZ.full}`,
-          `日柱 ${birthDay.full}`,
-          `時柱 ${person.birthHourGZ ? person.birthHourGZ.full : (person.birthHour || "—")}`,
-          `星座 ${person.constellation}`,
-          `虛歲 ${xuAge}`,
-          `週歲 ${age}`
+          `${t("zodiac")} ${person.xiao}`,
+          person.genderLabel ? `${t("gender")} ${person.gender === "female" ? t("female") : t("male")}` : null,
+          `${t("pillars")} ${person.birthYearGZ.full}${person.birthMonthGZ.full}${birthDay.full}${person.birthHourGZ ? person.birthHourGZ.full : ""}`,
+          `${t("yearPillar")} ${person.birthYearGZ.full}`,
+          `${t("monthPillar")} ${person.birthMonthGZ.full}`,
+          `${t("dayPillar")} ${birthDay.full}`,
+          `${t("hourPillar")} ${person.birthHourGZ ? person.birthHourGZ.full : (person.birthHour || "—")}`,
+          `${t("constellation")} ${person.constellation}`,
+          `${t("xuAge")} ${xuAge}`,
+          `${t("zhouAge")} ${age}`
         ].filter(Boolean)
       };
     }
@@ -4153,24 +4205,25 @@
 
       const jieqi = getJieQi(date);
       let jieqiText = jieqi.isToday
-        ? `今日${jieqi.name}`
-        : `${jieqi.name} · ${jieqi.daysToNext}日後${jieqi.next}`;
+        ? t("todayJieqi", { name: jieqi.name })
+        : t("jieqiAfter", { name: jieqi.name, n: jieqi.daysToNext, next: jieqi.next });
       if (siJueLi) {
-        jieqiText = `${siJueLi.label}（明日${siJueLi.jieqi}）`;
+        jieqiText = `${siJueLi.label}（${t("tomorrowJieqi")} ${siJueLi.jieqi}）`;
       }
 
+      const wd = (window.I18N ? I18N.weekday(date.getDay()) : WEEKDAYS[date.getDay()]);
       const base = {
-        weekday: `星期${WEEKDAYS[date.getDay()]}`,
-        solar: `${y}年${m}月${d}日`,
+        weekday: `${t("weekdayPrefix")}${wd}`,
+        solar: t("solarFmt", { y, m, d }),
         lunar: formatLunar(lunar, yearGZ),
         ganzhiLine: `${yearGZ.full}年 ${monthGZ.full}月 ${dayGZ.full}日`,
-        zodiac: `生肖 ${ZHI_TO_XIAO[yearGZ.zhi]}`,
-        constellation: `星座 ${getConstellation(m, d)}`,
+        zodiac: `${t("zodiac")} ${ZHI_TO_XIAO[yearGZ.zhi]}`,
+        constellation: `${t("constellation")} ${getConstellation(m, d)}`,
         jieqi: jieqiText,
         siJueLi,
         wuxing: `${WUXING_GAN[dayGZ.gan]}${WUXING_ZHI[dayGZ.zhi]}之日`,
         nayin: getNaYin(dayGZ.full),
-        chongsha: `冲${ZHI_TO_XIAO[CHONG_MAP[dayGZ.zhi]]}(${CHONG_MAP[dayGZ.zhi]}) 煞${SHA_MAP[dayGZ.zhi]}`,
+        chongsha: `${t("chong")}${ZHI_TO_XIAO[CHONG_MAP[dayGZ.zhi]]}(${CHONG_MAP[dayGZ.zhi]}) ${t("sha")}${SHA_MAP[dayGZ.zhi]}`,
         zhishenParts: formatZhishenParts(jianchu, qinglong),
         zhishenPlain: `建除${jianchu}日 · 青龍系${qinglong.name}（${qinglong.dao}）`,
         qinglong,
@@ -4225,13 +4278,14 @@
         p.score < 45 ? "0 0 0 1px rgba(155,28,28,0.55)" : "none";
       const genderClass = person.gender === "female" ? " female" : "";
       const det = p.detMeta || null;
+      const detKeys = [t("tenGodPrefix"), t("jianchuPrefix"), t("zhishenPrefix"), t("xiuPrefix"), t("flowDayPrefix")];
 
       return `
-        <section class="personal${genderClass}" aria-label="${person.label}出生個人運勢">
+        <section class="personal${genderClass}" aria-label="${person.label}${t("born")}">
           <div class="personal-head">
             <div class="who">
               ${person.titleHint}
-              <small>${person.label} 出生 · 農曆${p.lunarShort} · 日柱${p.birthDayPillar}${det && det.dayMaster ? ` · 日主${det.dayMaster}` : ""}</small>
+              <small>${person.label} ${t("born")} · ${t("lunar")}${p.lunarShort} · ${t("dayPillar")}${p.birthDayPillar}${det && det.dayMaster ? ` · ${t("dayMaster")}${det.dayMaster}` : ""}</small>
             </div>
             <div class="luck-badge" style="box-shadow:${badgeShadow}">
               <span class="score">${p.score}</span>
@@ -4240,41 +4294,41 @@
           </div>
           <div class="personal-body">
             <div class="profile-row">${p.chips.map(c => {
-              const isDet = typeof c === "string" && (c.startsWith("十神") || c.startsWith("建除") || c.startsWith("值神") || c.startsWith("星宿") || c.startsWith("流日"));
+              const isDet = typeof c === "string" && detKeys.some((k) => c.startsWith(k));
               return `<span class="chip${isDet ? " det" : ""}">${c}</span>`;
             }).join("")}</div>
             ${det ? `
-            <div class="det-meta" aria-label="確定性計算摘要">
-              <div class="dm"><span class="k">流日十神</span><span class="v">${det.shiShen || "—"}</span></div>
-              <div class="dm"><span class="k">建除 · 值神</span><span class="v">${det.zhiXing || "—"} · ${det.tianShen || "—"}</span></div>
-              <div class="dm"><span class="k">二十八宿</span><span class="v">${det.xiu || "—"}${det.xiuLuck ? "（" + det.xiuLuck + "）" : ""}</span></div>
-              <div class="dm"><span class="k">喜用／忌神</span><span class="v">${det.xiYongHit ? "流日合喜用" : det.jiYongHit ? "流日觸忌" : "中性"}</span></div>
-              ${det.tcm ? `<div class="dm full"><span class="k">節氣養生 · ${det.tcm.jieqi || ""}</span><span class="v">${det.tcm.wx || ""}（${det.tcm.zang || ""}）— ${det.tcm.advice || ""}</span></div>` : ""}
+            <div class="det-meta">
+              <div class="dm"><span class="k">${t("shiShen")}</span><span class="v">${det.shiShen || "—"}</span></div>
+              <div class="dm"><span class="k">${t("jianchuShen")}</span><span class="v">${det.zhiXing || "—"} · ${det.tianShen || "—"}</span></div>
+              <div class="dm"><span class="k">${t("xiu28")}</span><span class="v">${det.xiu || "—"}${det.xiuLuck ? "（" + det.xiuLuck + "）" : ""}</span></div>
+              <div class="dm"><span class="k">${t("xiJi")}</span><span class="v">${det.xiYongHit ? t("xiHit") : det.jiYongHit ? t("jiHit") : t("neutral")}</span></div>
+              ${det.tcm ? `<div class="dm full"><span class="k">${t("jysPersonal")} · ${det.tcm.jieqi || ""}</span><span class="v">${det.tcm.wx || ""}（${det.tcm.zang || ""}）— ${det.tcm.advice || ""}</span></div>` : ""}
             </div>
             ` : ""}
             <div class="relation-box">${p.relation.label}　<span class="stars">${p.stars}</span></div>
             ${p.huangji ? `
             <div class="huangji-box">
-              <h4>皇極數讖言</h4>
+              <h4>${t("huangjiTitle")}</h4>
               <div class="huangji-meta">
                 <div class="hm">
-                  <span class="k">本命八字 → 數序</span>
+                  <span class="k">${t("huangjiBirth")}</span>
                   <span class="v">${p.huangji.birthXu.label}</span>
-                  <div class="zs-hint">四柱 ${p.huangji.birthBazi || p.huangji.birthXu.pillarsLabel}</div>
-                  <div class="zs-hint">${p.person.birthSolar.replace(/-/g, ".")}${p.huangji.birthHour}時 · ${p.huangji.birthXu.totalXuLabel} · 對卦${p.huangji.birthXu.gua}</div>
+                  <div class="zs-hint">${t("huangjiPillars")} ${p.huangji.birthBazi || p.huangji.birthXu.pillarsLabel}</div>
+                  <div class="zs-hint">${p.person.birthSolar.replace(/-/g, ".")}${p.huangji.birthHour}${t("hourChar")} · ${p.huangji.birthXu.totalXuLabel} · ${t("against")}${p.huangji.birthXu.gua}</div>
                 </div>
                 <div class="hm">
-                  <span class="k">流日八字（定午）→ 數序</span>
+                  <span class="k">${t("huangjiFlow")}</span>
                   <span class="v">${p.huangji.dayXu.label}</span>
-                  <div class="zs-hint">四柱 ${p.huangji.flowBazi || p.huangji.dayXu.pillarsLabel}</div>
-                  <div class="zs-hint">史尺 ${p.huangji.hist.label} · ${p.huangji.dayXu.yearXuLabel} · 對卦${p.huangji.dayXu.gua}</div>
+                  <div class="zs-hint">${t("huangjiPillars")} ${p.huangji.flowBazi || p.huangji.dayXu.pillarsLabel}</div>
+                  <div class="zs-hint">${t("histScale")} ${p.huangji.hist.label} · ${p.huangji.dayXu.yearXuLabel} · ${t("against")}${p.huangji.dayXu.gua}</div>
                 </div>
               </div>
               <div class="huangji-chen">
-                <span class="hc-label">應驗讖言 · 序第${p.huangji.displayYingXu}</span>
-                <div class="hc-gua">值卦：${p.huangji.displayGua}（本命總序×流日柱序合成）</div>
+                <span class="hc-label">${t("huangjiYing")}${p.huangji.displayYingXu}</span>
+                <div class="hc-gua">${t("huangjiGua")}：${p.huangji.displayGua}${t("huangjiSynth")}</div>
                 <div class="hc-wen">${p.huangji.displayChenwen}</div>
-                <div class="hc-bai"><span class="hc-bai-label">白話說明</span>${p.huangji.displayBaihua || ""}</div>
+                <div class="hc-bai"><span class="hc-bai-label">${t("baihua")}</span>${p.huangji.displayBaihua || ""}</div>
                 <div class="zs-hint" style="margin-top:8px;opacity:0.85">${p.huangji.ying && p.huangji.ying.formula ? p.huangji.ying.formula : ""}</div>
               </div>
             </div>
@@ -4283,30 +4337,30 @@
               ${p.aspects.map(a => `
                 <div class="aspect">
                   <div class="a-name">${a.name}</div>
-                  <div class="a-score">${a.score} 分</div>
+                  <div class="a-score">${a.score} ${t("scoreUnit")}</div>
                   <div class="a-bar"><i style="width:${a.score}%"></i></div>
                   <div class="a-stars">${starText(a.score)}</div>
                 </div>
               `).join("")}
             </div>
             <div class="advice-block do">
-              <h4>● 適合做</h4>
-              <ul>${p.yi.map(t => `<li>${t}</li>`).join("")}</ul>
+              <h4>${t("doTitle")}</h4>
+              <ul>${p.yi.map((x) => `<li>${x}</li>`).join("")}</ul>
             </div>
             <div class="advice-block dont">
-              <h4>● 不適合做</h4>
-              <ul>${p.ji.map(t => `<li>${t}</li>`).join("")}</ul>
+              <h4>${t("dontTitle")}</h4>
+              <ul>${p.ji.map((x) => `<li>${x}</li>`).join("")}</ul>
             </div>
             <div class="advice-block note">
-              <h4>● 今日注意</h4>
-              <ul>${p.notes.map(t => `<li>${t}</li>`).join("")}</ul>
+              <h4>${t("noteTitle")}</h4>
+              <ul>${p.notes.map((x) => `<li>${x}</li>`).join("")}</ul>
             </div>
             <p class="summary-text">${p.summary}</p>
             <div class="tiji-tip">
-              <span class="tiji-label">趨吉避凶 · 提高運勢</span>
-              ${p.tijiTip || "今日以穩為主，順勢而為即可。"}
+              <span class="tiji-label">${t("tijiLabel")}</span>
+              ${p.tijiTip || (window.I18N && I18N.isJa() ? "今日は稳を主とし、流れに従えば十分です。" : "今日以穩為主，順勢而為即可。")}
             </div>
-            ${p.engineSource ? `<div class="source-tag">運勢來源：${p.engineSource}</div>` : ""}
+            ${p.engineSource ? `<div class="source-tag">${t("sourcePrefix")}${p.engineSource}</div>` : ""}
           </div>
         </section>
       `;
@@ -4337,8 +4391,13 @@
               }
             : base.relation;
 
-          const workYi = (eng.workTips || []).map((t) => `十神宜：${t}`);
-          const lifeYi = (eng.lifeTips || []).map((t) => `生活：${t}`);
+          const isJa = window.I18N && I18N.isJa();
+          const workYi = (eng.workTips || []).map((tip) =>
+            isJa ? `十神（向く）：${tip}` : `十神宜：${tip}`
+          );
+          const lifeYi = (eng.lifeTips || []).map((tip) =>
+            isJa ? `生活：${tip}` : `生活：${tip}`
+          );
           const yiModern = eng.yiModern || [];
           const cautions = eng.cautions || [];
           const yi = uniq([...workYi, ...lifeYi, ...yiModern, ...(base.yi || [])]).slice(0, 7);
@@ -4354,7 +4413,17 @@
 
           const who = `${base.birthYearPillar}${base.person.xiao}`;
           let summary = base.summary;
-          if (eng.score >= 72) {
+          if (isJa) {
+            if (eng.score >= 72) {
+              summary = `全体運勢「${eng.level}」。${who}の今日の流日十神は「${eng.shiShen}」、建除は「${eng.zhiXing}」。気場は開き気味。十神の場面に沿って進め、良いところで切り上げを。`;
+            } else if (eng.score >= 55) {
+              summary = `全体運勢「${eng.level}」。十神「${eng.shiShen}」の日。可控な細部とマッピング提案に力を、一度に完璧を求めない。`;
+            } else if (eng.score >= 40) {
+              summary = `全体運勢「${eng.level}」。建除「${eng.zhiXing}」と刑冲合害は守りの気配。対外交渉は延ばし、リズムを整える。`;
+            } else {
+              summary = `全体運勢「${eng.level}」。冲克や凶煞が重め。重大な約束や正面衝突を控え、安全は減速と再確認から。`;
+            }
+          } else if (eng.score >= 72) {
             summary = `整體運勢「${eng.level}」。${who}今日流日十神為「${eng.shiShen}」、建除「${eng.zhiXing}」；氣場偏開，可依十神場景積極推進，仍見好就收。`;
           } else if (eng.score >= 55) {
             summary = `整體運勢「${eng.level}」。十神「${eng.shiShen}」日，宜把力氣放在可控細節與映射建議上，不強求一次到位。`;
@@ -4373,14 +4442,17 @@
           }));
 
           const detChips = [
-            eng.shiShen ? `十神 ${eng.shiShen}` : null,
-            eng.zhiXing ? `建除 ${eng.zhiXing}` : null,
-            eng.tianShen ? `值神 ${eng.tianShen}` : null,
-            eng.xiu ? `星宿 ${eng.xiu}` : null,
-            detP.flowDay ? `流日 ${detP.flowDay}` : null
+            eng.shiShen ? `${t("tenGodPrefix")} ${eng.shiShen}` : null,
+            eng.zhiXing ? `${t("jianchuPrefix")} ${eng.zhiXing}` : null,
+            eng.tianShen ? `${t("zhishenPrefix")} ${eng.tianShen}` : null,
+            eng.xiu ? `${t("xiuPrefix")} ${eng.xiu}` : null,
+            detP.flowDay ? `${t("flowDayPrefix")} ${detP.flowDay}` : null
           ].filter(Boolean);
 
-          const chips = uniq([...(base.chips || []).filter((c) => !/^十神|^建除|^值神|^星宿|^流日/.test(c)), ...detChips]);
+          const chipRe = new RegExp(
+            `^(${t("tenGodPrefix")}|${t("jianchuPrefix")}|${t("zhishenPrefix")}|${t("xiuPrefix")}|${t("flowDayPrefix")}|十神|建除|值神|星宿|流日)`
+          );
+          const chips = uniq([...(base.chips || []).filter((c) => !chipRe.test(c)), ...detChips]);
 
           const tijiTip = (eng.actions || []).slice(0, 3).join("；") || base.tijiTip;
 
@@ -4429,21 +4501,21 @@
       if (!titleEl || !bodyEl) return;
 
       if (!window.JieqiYangsheng || typeof JieqiYangsheng.getYangsheng !== "function") {
-        titleEl.textContent = "節氣養生｜—";
+        titleEl.textContent = `${t("jysTitlePrefix")}｜—`;
         if (badgeEl) badgeEl.hidden = true;
-        bodyEl.innerHTML = '<div class="jys-empty">養生資料未載入</div>';
+        bodyEl.innerHTML = `<div class="jys-empty">${t("jysEmpty")}</div>`;
         return;
       }
 
-      const pack = JieqiYangsheng.getYangsheng(date, { locale: "zh-Hant" });
+      const locale = window.I18N ? I18N.jieqiLocale() : "zh-Hant";
+      const pack = JieqiYangsheng.getYangsheng(date, { locale });
       if (almanacData) almanacData.jieqiYangsheng = pack;
 
-      titleEl.textContent = `節氣養生｜${pack.name || "—"}`;
+      titleEl.textContent = `${t("jysTitlePrefix")}｜${pack.name || "—"}`;
       if (badgeEl) {
         badgeEl.hidden = !pack.isToday;
-        badgeEl.textContent = "今日交節";
+        badgeEl.textContent = t("jysToday");
       }
-      // 交節日預設展開；其餘維持使用者摺疊狀態（不強制改 open）
       const box = document.getElementById("jieqiYangsheng");
       if (box && pack.isToday) box.open = true;
 
@@ -4482,7 +4554,7 @@
         siAlert.className = `si-alert show ${isJue ? "jue" : "li"}`;
         document.getElementById("siBadge").textContent = data.siJueLi.label;
         document.getElementById("siSub").innerHTML =
-          `明日節氣：<strong>${data.siJueLi.jieqi}</strong>（${data.siJueLi.jieqiDate}）`;
+          `${t("tomorrowJieqi")}：<strong>${data.siJueLi.jieqi}</strong>（${data.siJueLi.jieqiDate}）`;
         document.getElementById("siTip").textContent = data.siJueLi.tip;
         if (banner) banner.classList.add("has-si");
       } else {
@@ -4546,17 +4618,17 @@
       `).join("");
       document.getElementById("lrSanchuan").innerHTML = `
         <div class="ch">
-          <div class="cn">初傳</div>
+          <div class="cn">${t("lrChu")}</div>
           <div class="cv">${lr.sanchuan.chu}</div>
           <div class="ct">${lr.chuJiang}</div>
         </div>
         <div class="ch">
-          <div class="cn">中傳</div>
+          <div class="cn">${t("lrZhong")}</div>
           <div class="cv">${lr.sanchuan.zhong}</div>
           <div class="ct">${lr.zhongJiang}</div>
         </div>
         <div class="ch">
-          <div class="cn">末傳</div>
+          <div class="cn">${t("lrMo")}</div>
           <div class="cv">${lr.sanchuan.mo}</div>
           <div class="ct">${lr.moJiang}</div>
         </div>
@@ -4635,6 +4707,21 @@
         render(current);
       }
     });
+
+    /* ========== 語言切換 ========== */
+    if (window.I18N) {
+      I18N.applyDom();
+      I18N.onChange(() => {
+        render(current);
+      });
+      const langBtn = document.getElementById("langToggle");
+      if (langBtn) {
+        langBtn.addEventListener("click", () => {
+          const next = I18N.getLang() === "ja" ? "zh-Hant" : "ja";
+          I18N.setLang(next);
+        });
+      }
+    }
 
     render(current);
 

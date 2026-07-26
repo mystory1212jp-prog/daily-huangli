@@ -140,13 +140,21 @@ ENGINE = r'''
       .replace(/"/g, "&quot;");
   }
 
+  function tt(key, fallback) {
+    if (global.I18N && typeof global.I18N.t === "function") {
+      const v = global.I18N.t(key);
+      if (v && v !== key) return v;
+    }
+    return fallback;
+  }
+
   function renderHtml(pack) {
     if (!pack || !pack.content) {
-      return '<div class="jys-empty">暫無此節氣養生資料</div>';
+      return '<div class="jys-empty">' + escapeHtml(tt("jysEmptyTerm", "暫無此節氣養生資料")) + "</div>";
     }
     const c = pack.content;
     const badge = pack.isToday
-      ? '<span class="jys-badge today">今日交節</span>'
+      ? '<span class="jys-badge today">' + escapeHtml(tt("jysToday", "今日交節")) + "</span>"
       : "";
     const focus = (c.focus || [])
       .map(function (t) {
@@ -161,24 +169,30 @@ ENGINE = r'''
           "</strong>" +
           (h.note ? " — " + escapeHtml(h.note) : "") +
           (h.bencao
-            ? '<span class="jys-bencao">《本草》' + escapeHtml(h.bencao) + "</span>"
+            ? '<span class="jys-bencao">' + escapeHtml(tt("jysBencao", "《本草》")) + escapeHtml(h.bencao) + "</span>"
             : "") +
           "</li>"
         );
       })
       .join("");
     const nextLine = pack.nextName
-      ? '<div class="jys-next">下一節氣：' +
+      ? '<div class="jys-next">' +
+        escapeHtml(tt("jysNext", "下一節氣")) +
+        "：" +
         escapeHtml(pack.nextName) +
         (pack.nextDate ? "（" + escapeHtml(pack.nextDate) + "）" : "") +
         "</div>"
       : "";
     return (
       '<div class="jys-meta-row">' +
-      '<span class="jys-wx">五行 ' +
+      '<span class="jys-wx">' +
+      escapeHtml(tt("jysWx", "五行")) +
+      " " +
       escapeHtml(pack.wx || "—") +
       "</span>" +
-      '<span class="jys-zang">臟腑 ' +
+      '<span class="jys-zang">' +
+      escapeHtml(tt("jysZang", "臟腑")) +
+      " " +
       escapeHtml(pack.zang || "—") +
       "</span>" +
       badge +
@@ -187,22 +201,32 @@ ENGINE = r'''
       escapeHtml(c.summary || "") +
       "</p>" +
       nextLine +
-      '<div class="jys-block"><h5>養生重點</h5><ul class="jys-focus">' +
+      '<div class="jys-block"><h5>' +
+      escapeHtml(tt("jysFocus", "養生重點")) +
+      '</h5><ul class="jys-focus">' +
       focus +
       "</ul></div>" +
-      '<div class="jys-block"><h5>飲食建議</h5><p>' +
+      '<div class="jys-block"><h5>' +
+      escapeHtml(tt("jysDiet", "飲食建議")) +
+      "</h5><p>" +
       escapeHtml(c.diet || "") +
       "</p></div>" +
-      '<div class="jys-block"><h5>作息／起居</h5><p>' +
+      '<div class="jys-block"><h5>' +
+      escapeHtml(tt("jysRoutine", "作息／起居")) +
+      "</h5><p>" +
       escapeHtml(c.routine || "") +
       "</p></div>" +
       (c.emotion
-        ? '<div class="jys-block"><h5>情志注意</h5><p>' +
+        ? '<div class="jys-block"><h5>' +
+          escapeHtml(tt("jysEmotion", "情志注意")) +
+          "</h5><p>" +
           escapeHtml(c.emotion) +
           "</p></div>"
         : "") +
       (herbs
-        ? '<div class="jys-block herbs"><h5>本草參考（神農本草經等）</h5><ul class="jys-herbs">' +
+        ? '<div class="jys-block herbs"><h5>' +
+          escapeHtml(tt("jysHerbs", "本草參考（神農本草經等）")) +
+          '</h5><ul class="jys-herbs">' +
           herbs +
           "</ul></div>"
         : "") +

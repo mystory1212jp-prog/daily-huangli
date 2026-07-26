@@ -1,5 +1,5 @@
 /* 每日黃曆 Service Worker — 離線可開啟 */
-const CACHE = "huangli-v20";
+const CACHE = "huangli-v21";
 const ASSETS = [
   "./",
   "./index.html",
@@ -7,6 +7,7 @@ const ASSETS = [
   "./icons/apple-touch-icon.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
+  "./lib/i18n.js",
   "./lib/huangli-db.js",
   "./lib/analysis-engine.js",
   "./lib/personal-system.js",
