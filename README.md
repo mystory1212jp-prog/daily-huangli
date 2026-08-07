@@ -20,6 +20,20 @@
 
 ## 本機預覽
 
+### 方式 A：Docker（建議開發用）
+
+線上 GitHub Pages **不依賴** Docker；Docker 只隔離本機開發與資料重建。詳見 [DOCKER.md](./DOCKER.md)。
+
+```bash
+make docker-build    # 首次
+make docker-up       # http://localhost:8765
+make docker-test     # 節氣／八字／運勢檢驗
+make docker-rebuild-all   # 重建 data/ + lib/
+make docker-down
+```
+
+### 方式 B：直接本機（與以前相同）
+
 ```bash
 python3 -m http.server 8765
 # 開啟 http://localhost:8765
@@ -44,12 +58,25 @@ python3 -m http.server 8765
 ## 資料庫重建
 
 ```bash
+# Docker（建議）
+make docker-rebuild-all
+
+# 或本機 Python
 pip3 install -r requirements.txt
-python3 scripts/build_db.py              # core-db + huangli-db.js
+python3 scripts/build_db.py              # core-db + huangli-db.js（節氣＝lunar_python 精算）
 python3 scripts/build_personal_system.py # mapping-db + personal-bazi + daily-facts-YYYY + personal-system.js
+python3 scripts/verify_calendar.py       # 快速檢驗
 ```
 
 體積約 **4 MB**，遠低於 500 MB。
+
+## 上傳 GitHub Pages
+
+與以往相同：推 `main` 的靜態檔即可，**不必**在 GitHub 上跑 Docker。
+
+```bash
+git add -A && git commit -m "..." && git push origin main
+```
 
 ## 說明
 

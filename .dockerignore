@@ -1,0 +1,17 @@
+.git
+.gitignore
+.DS_Store
+**/.DS_Store
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.log
+*.md
+!README.md
+IPHONE安裝說明.md
+DOCKER.md
+.env
+.env.*
+.vscode
+.idea
+node_modules
