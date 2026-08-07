@@ -2324,22 +2324,26 @@
     const SI_JUE_JIEQI = ["立春", "立夏", "立秋", "立冬"];
     const SI_LI_JIEQI = ["春分", "夏至", "秋分", "冬至"];
 
+    function getJieQiTableYear(year) {
+      const db = (window.HUANGLI_DB && HUANGLI_DB.jieqi)
+        || (window.HuangliEngine && HuangliEngine.DB && HuangliEngine.DB.jieqi);
+      return db ? db[String(year)] : null;
+    }
+
     function getJieQiDateInYear(year, jieqiName) {
-      // 優先開源 DB 節氣表
-      if (window.HuangliEngine && HuangliEngine.DB && HuangliEngine.DB.jieqi) {
-        const arr = HuangliEngine.DB.jieqi[String(year)];
-        if (arr) {
-          const hit = arr.find((x) => x.n === jieqiName);
-          if (hit) return new Date(year, hit.m - 1, hit.d, 12);
-        }
+      // 優先：lunar_python 精算寫入的節氣表（core-db / huangli-db）
+      const arr = getJieQiTableYear(year);
+      if (arr) {
+        const hit = arr.find((x) => x.n === jieqiName);
+        if (hit) return new Date(year, hit.m - 1, hit.d, 12);
       }
-      // 後備：與 getJieQi 相同近似日
+      // 後備近似（僅 DB 未載入時；立秋勿寫死 8/8）
       const approxMap = {
         小寒: [1, 5], 大寒: [1, 20], 立春: [2, 4], 雨水: [2, 19],
-        驚蟄: [3, 6], 春分: [3, 21], 清明: [4, 5], 穀雨: [4, 20],
-        立夏: [5, 6], 小滿: [5, 21], 芒種: [6, 6], 夏至: [6, 21],
-        小暑: [7, 7], 大暑: [7, 23], 立秋: [8, 8], 處暑: [8, 23],
-        白露: [9, 8], 秋分: [9, 23], 寒露: [10, 8], 霜降: [10, 23],
+        驚蟄: [3, 5], 春分: [3, 20], 清明: [4, 5], 穀雨: [4, 20],
+        立夏: [5, 5], 小滿: [5, 21], 芒種: [6, 5], 夏至: [6, 21],
+        小暑: [7, 7], 大暑: [7, 23], 立秋: [8, 7], 處暑: [8, 23],
+        白露: [9, 7], 秋分: [9, 23], 寒露: [10, 8], 霜降: [10, 23],
         立冬: [11, 7], 小雪: [11, 22], 大雪: [12, 7], 冬至: [12, 22]
       };
       const md = approxMap[jieqiName];
@@ -2396,38 +2400,82 @@
     }
 
     function getJieQi(date) {
-      // 簡化節氣：用各月近似日
-      const approx = [
-        [1, 5, "小寒"], [1, 20, "大寒"], [2, 4, "立春"], [2, 19, "雨水"],
-        [3, 6, "驚蟄"], [3, 21, "春分"], [4, 5, "清明"], [4, 20, "穀雨"],
-        [5, 6, "立夏"], [5, 21, "小滿"], [6, 6, "芒種"], [6, 21, "夏至"],
-        [7, 7, "小暑"], [7, 23, "大暑"], [8, 8, "立秋"], [8, 23, "處暑"],
-        [9, 8, "白露"], [9, 23, "秋分"], [10, 8, "寒露"], [10, 23, "霜降"],
-        [11, 7, "立冬"], [11, 22, "小雪"], [12, 7, "大雪"], [12, 22, "冬至"]
-      ];
+      // 優先：精算節氣表（lunar_python → core-db）
       const y = date.getFullYear();
       const m = date.getMonth() + 1;
       const d = date.getDate();
+      const noon = new Date(y, m - 1, d, 12, 0, 0, 0);
+
+      const buildFromTable = (year) => {
+        const arr = getJieQiTableYear(year);
+        if (!arr || !arr.length) return null;
+        return arr.map((x) => ({
+          name: x.n,
+          date: new Date(year, x.m - 1, x.d, 12)
+        }));
+      };
+
+      // 序列：前一年冬至後段 + 本年 24 節 + 次年小寒（供跨年 next）
+      const seq = [];
+      const prevYear = buildFromTable(y - 1);
+      if (prevYear) {
+        prevYear.forEach((it) => {
+          if (it.date.getMonth() >= 10) seq.push(it); // 11–12 月節氣
+        });
+      }
+      const thisYear = buildFromTable(y);
+      if (thisYear) thisYear.forEach((it) => seq.push(it));
+      const nextYear = buildFromTable(y + 1);
+      if (nextYear && nextYear[0]) seq.push(nextYear[0]);
+
+      if (seq.length) {
+        let curIdx = -1;
+        for (let i = 0; i < seq.length; i++) {
+          if (daysBetween(noon, seq[i].date) <= 0) curIdx = i;
+        }
+        if (curIdx < 0) {
+          // 早於表內第一個節氣：用前一年末
+          curIdx = 0;
+        }
+        const cur = seq[curIdx];
+        const nxt = seq[Math.min(curIdx + 1, seq.length - 1)];
+        const isToday = daysBetween(noon, cur.date) === 0;
+        const daysToNext = nxt && nxt !== cur ? daysBetween(noon, nxt.date) : 0;
+        return {
+          name: cur.name,
+          isToday,
+          next: nxt ? nxt.name : cur.name,
+          daysToNext: Math.max(0, daysToNext)
+        };
+      }
+
+      // 後備近似（DB 未載入）
+      const approx = [
+        [1, 5, "小寒"], [1, 20, "大寒"], [2, 4, "立春"], [2, 19, "雨水"],
+        [3, 5, "驚蟄"], [3, 20, "春分"], [4, 5, "清明"], [4, 20, "穀雨"],
+        [5, 5, "立夏"], [5, 21, "小滿"], [6, 5, "芒種"], [6, 21, "夏至"],
+        [7, 7, "小暑"], [7, 23, "大暑"], [8, 7, "立秋"], [8, 23, "處暑"],
+        [9, 7, "白露"], [9, 23, "秋分"], [10, 8, "寒露"], [10, 23, "霜降"],
+        [11, 7, "立冬"], [11, 22, "小雪"], [12, 7, "大雪"], [12, 22, "冬至"]
+      ];
       let current = "冬至";
       let nextName = "小寒";
       let nextDiff = 999;
-
       for (let i = 0; i < approx.length; i++) {
         const [mm, dd, name] = approx[i];
-        const jq = new Date(y, mm - 1, dd);
-        const diff = daysBetween(date, jq);
-        if (diff === 0) return { name, isToday: true, next: approx[(i + 1) % 24][2], daysToNext: approx[(i + 1) % 24] ? daysBetween(date, new Date(y + (i === 23 ? 1 : 0), approx[(i + 1) % 24][0] - 1, approx[(i + 1) % 24][1])) : 0 };
+        const jq = new Date(y, mm - 1, dd, 12);
+        const diff = daysBetween(noon, jq);
+        if (diff === 0) {
+          const ni = (i + 1) % 24;
+          const [nm, nd, nn] = approx[ni];
+          const nDate = new Date(y + (i === 23 ? 1 : 0), nm - 1, nd, 12);
+          return { name, isToday: true, next: nn, daysToNext: daysBetween(noon, nDate) };
+        }
         if (diff < 0) current = name;
         if (diff > 0 && diff < nextDiff) {
           nextDiff = diff;
           nextName = name;
         }
-      }
-      // 跨年
-      if (m === 12 && d > 22) {
-        current = "冬至";
-        nextName = "小寒";
-        nextDiff = daysBetween(date, new Date(y + 1, 0, 5));
       }
       return { name: current, isToday: false, next: nextName, daysToNext: nextDiff };
     }

@@ -409,20 +409,33 @@ def day_fact(y: int, m: int, d: int) -> dict:
     l = s.getLunar()
     prev_jq = l.getPrevJieQi()
     next_jq = l.getNextJieQi()
-    prev_name = prev_jq.getName() if prev_jq else ""
-    next_name = next_jq.getName() if next_jq else ""
+    today_jq = l.getJieQi()  # 交節當日會回傳節氣名
 
-    # 四絕四離：看「明天」是否為八節
+    # 當前所在節氣：交節當日全日歸新節（交節時刻常在午後／晚間）
+    if today_jq:
+        prev_name = today_jq
+        # 下一節：從明日起算的 next
+        tmr = date(y, m, d) + timedelta(days=1)
+        n2 = Solar.fromYmd(tmr.year, tmr.month, tmr.day).getLunar().getNextJieQi()
+        next_name = n2.getName() if n2 else (next_jq.getName() if next_jq else "")
+    elif next_jq and next_jq.getSolar().getYear() == y and next_jq.getSolar().getMonth() == m and next_jq.getSolar().getDay() == d:
+        # 少數情況 getJieQi 空但 next 落在今天
+        prev_name = next_jq.getName()
+        tmr = date(y, m, d) + timedelta(days=1)
+        n2 = Solar.fromYmd(tmr.year, tmr.month, tmr.day).getLunar().getNextJieQi()
+        next_name = n2.getName() if n2 else ""
+    else:
+        prev_name = prev_jq.getName() if prev_jq else ""
+        next_name = next_jq.getName() if next_jq else ""
+
+    # 四絕四離：八節「前一日」（今天的 next 在明天）
     tomorrow = date(y, m, d) + timedelta(days=1)
-    st = Solar.fromYmd(tomorrow.year, tomorrow.month, tomorrow.day)
-    lt = st.getLunar()
-    # 若明天的 prevJieQi 日期就是明天… 用 jieqi table 比對較穩
     si = None
-    # 用當天 nextJieQi：若 next 在明天
-    if next_jq:
-        ns = next_jq.getSolar()
+    nq = next_jq
+    if nq:
+        ns = nq.getSolar()
         if ns.getYear() == tomorrow.year and ns.getMonth() == tomorrow.month and ns.getDay() == tomorrow.day:
-            nn = next_jq.getName()
+            nn = nq.getName()
             if nn in SI_JUE:
                 si = {"type": "jue", "label": "四絕日", "jieqi": nn}
             elif nn in SI_LI:

@@ -75,48 +75,79 @@ JIEQI_YUEJIAN = {
     "大雪": "子", "冬至": "子", "小寒": "丑", "大寒": "丑",
 }
 
-# 壽星／開源曆常用：節氣儒略日近似係數（世紀單位），精度足夠日常黃曆
-# 公式：JDE ≈ 365.242 * (Y-2000) + C[i] 的簡化月日表改為逐年掃近似日
-# 這裡用穩定近似：各節氣公曆月日中心值 ± 用年偏移修正
-JIEQI_APPROX = [
-    (1, 5.4), (1, 20.1), (2, 4.0), (2, 18.7), (3, 5.6), (3, 20.4),
-    (4, 5.0), (4, 20.1), (5, 5.7), (5, 21.1), (6, 5.9), (6, 21.4),
-    (7, 7.2), (7, 22.8), (8, 7.6), (8, 23.1), (9, 7.8), (9, 23.1),
-    (10, 8.3), (10, 23.2), (11, 7.5), (11, 22.3), (12, 7.1), (12, 21.9),
-]
+# 簡體→繁體（lunar_python 節氣名多為簡體）
+_JIEQI_S2T = str.maketrans({
+    "惊": "驚", "蛰": "蟄", "谷": "穀", "处": "處",
+})
+_JIEQI_NAME_S2T = {
+    "小寒": "小寒", "大寒": "大寒", "立春": "立春", "雨水": "雨水",
+    "惊蛰": "驚蟄", "驚蟄": "驚蟄", "春分": "春分", "清明": "清明",
+    "谷雨": "穀雨", "穀雨": "穀雨", "立夏": "立夏", "小满": "小滿", "小滿": "小滿",
+    "芒种": "芒種", "芒種": "芒種", "夏至": "夏至", "小暑": "小暑", "大暑": "大暑",
+    "立秋": "立秋", "处暑": "處暑", "處暑": "處暑", "白露": "白露", "秋分": "秋分",
+    "寒露": "寒露", "霜降": "霜降", "立冬": "立冬", "小雪": "小雪", "大雪": "大雪",
+    "冬至": "冬至",
+}
 
 
-def jieqi_date(year: int, idx: int) -> date:
-    """開源黃曆慣用近似：節氣公曆日期（足以定月建／陰陽遁）。"""
-    m, d = JIEQI_APPROX[idx]
-    # 世紀修正（粗）：每百年約 +0.2～0.4 日，取線性
-    adj = (year - 2000) * 0.2422 / 365.25  # 天
-    day = d + adj
-    # 閏年 2 月後微調
-    if m >= 3 and year % 4 == 0 and (year % 100 != 0 or year % 400 == 0):
-        day += 0.0
-    di = int(day)
-    frac = day - di
-    base = date(year, m, min(di, 28 if m == 2 else 30 if m in (4, 6, 9, 11) else 31))
-    # 處理溢出
-    try:
-        base = date(year, m, min(max(di, 1), 28 if m == 2 else 30 if m in (4, 6, 9, 11) else 31))
-    except ValueError:
-        base = date(year, m, 28)
-    if frac > 0.5 and base.day < 28:
-        base = base + timedelta(days=1)
-    return base
+def _trad_jieqi_name(name: str) -> str:
+    if not name:
+        return name
+    return _JIEQI_NAME_S2T.get(name, name.translate(_JIEQI_S2T))
 
 
 def build_jieqi_index(y0=1980, y1=2040):
-    """預計算節氣日期表（約 60 年 × 24 ≈ 1440 條，極小）。"""
-    table = {}
+    """
+    以 lunar_python（6tail/lunar 同源）精算各年二十四節氣「交節公曆日」。
+    舊版固定月日近似會把 2026 立秋誤標 8/8（實為 8/7 19:42）。
+    """
+    try:
+        from lunar_python import Solar
+    except ImportError as e:
+        raise SystemExit(
+            "build_db.py 節氣精算需要 lunar_python：pip3 install lunar_python\n" + str(e)
+        )
+
+    table: dict[str, list] = {}
     for y in range(y0, y1 + 1):
+        # 掃描整年，收集 getJieQi() 有值的交節日
+        by_name: dict[str, date] = {}
+        d0 = date(y, 1, 1)
+        d1 = date(y, 12, 31)
+        cur = d0
+        while cur <= d1:
+            s = Solar.fromYmd(cur.year, cur.month, cur.day)
+            l = s.getLunar()
+            jq = l.getJieQi()
+            if jq:
+                name = _trad_jieqi_name(jq)
+                # 同名只取第一次（交節當日）
+                if name not in by_name:
+                    by_name[name] = cur
+            cur += timedelta(days=1)
+
         arr = []
-        for i, name in enumerate(JIEQI_NAMES):
-            d = jieqi_date(y, i)
+        missing = []
+        for name in JIEQI_NAMES:
+            d = by_name.get(name)
+            if not d:
+                missing.append(name)
+                continue
             arr.append({"n": name, "m": d.month, "d": d.day})
-        table[str(y)] = arr
+        if missing:
+            raise RuntimeError(f"jieqi missing {y}: {missing}")
+        # 依實際日期排序，確保與曆法順序一致
+        arr.sort(key=lambda x: (x["m"], x["d"]))
+        # 但前端 currentJieQi 依賴「年內循序」與 JIEQI_NAMES 順序；
+        # 若排序後名稱順序與 JIEQI_NAMES 不同（跨年冬至等），仍應依 JIEQI_NAMES 輸出
+        ordered = []
+        for name in JIEQI_NAMES:
+            hit = next(x for x in arr if x["n"] == name)
+            ordered.append(hit)
+        table[str(y)] = ordered
+        if y in (2024, 2025, 2026, 2027):
+            liqiu = next(x for x in ordered if x["n"] == "立秋")
+            print(f"  jieqi {y} 立秋 = {liqiu['m']:02d}-{liqiu['d']:02d}")
     return table
 
 
@@ -453,18 +484,20 @@ def main():
     db = {
         "meta": {
             "name": "daily-huangli-core-db",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "maxSizeHintMB": 500,
             "license": "Public-domain traditional tables + open algorithm ports (non-copyrightable facts/rules)",
             "sources": [
                 "Traditional Chinese almanac tables (建除/黃黑道/神煞) as used in open 黃曆 projects",
                 "Lunar year bit table (1900-2100) shared by open lunar libs (e.g. 6tail/lunar lineage)",
+                "Solar terms (二十四節氣) exact calendar days via lunar_python / 6tail lunar",
                 "Qimen chaibu ju songs as in open qimen projects (e.g. kinqimen-compatible tables)",
                 "Liu Ren yuejiang/guiren/jigong traditional tables (open liuren ports)",
                 "Ziping day-master relations for personal daily fortune",
             ],
             "jieqiRange": [1980, 2040],
-            "note": "精簡結構化知識庫，非爬取整站；演算法在前端結合本庫即時推算。",
+            "jieqiEngine": "lunar_python",
+            "note": "節氣交節日以 lunar_python 精算；建除／奇門／六壬表為傳統結構，前端即時推算。",
         },
         "jieqi": build_jieqi_index(1980, 2040),
         "jieqiNames": JIEQI_NAMES,
