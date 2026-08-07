@@ -28,6 +28,7 @@
       --ink: #1a1208;
       --paper: #fbf6ea;
       --paper-dark: #f0e6d0;
+      --paper-bg: #efe4c8;
       --muted: #6b5c48;
       --yi: #1f6b3a;
       --ji: #9b1c1c;
@@ -43,24 +44,66 @@
     html {
       height: 100%;
       -webkit-text-size-adjust: 100%;
+      /* overscroll / 彈性捲動露底時仍是宣紙色，不露白斷層 */
+      background-color: var(--paper-bg);
     }
 
     body {
-      min-height: 100vh;
+      position: relative;
+      min-height: 100%;
       min-height: 100dvh;
       font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
       color: var(--ink);
-      background:
-        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 162, 39, 0.18), transparent 55%),
-        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(155, 28, 28, 0.08), transparent 50%),
-        linear-gradient(165deg, #f8f1df 0%, #efe2c4 45%, #e8d9b8 100%);
-      padding: 24px 16px 48px;
+      /* 底色與 html 一致；裝飾改 fixed 層，捲動不拉斷漸層 */
+      background-color: var(--paper-bg);
+      padding: 24px 16px 56px;
       padding-top: max(24px, env(safe-area-inset-top));
-      padding-bottom: max(48px, env(safe-area-inset-bottom));
+      padding-bottom: max(64px, env(safe-area-inset-bottom) + 24px);
       padding-left: max(16px, env(safe-area-inset-left));
       padding-right: max(16px, env(safe-area-inset-right));
       -webkit-tap-highlight-color: transparent;
-      overscroll-behavior-y: contain;
+      overscroll-behavior-y: none;
+    }
+
+    /* 全視窗固定背景：不隨內容高度變形，無中段接縫 */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 100% 70% at 50% -5%, rgba(255, 250, 235, 0.95) 0%, transparent 58%),
+        radial-gradient(ellipse 70% 50% at 0% 30%, rgba(201, 162, 39, 0.1) 0%, transparent 55%),
+        radial-gradient(ellipse 65% 45% at 100% 55%, rgba(155, 28, 28, 0.07) 0%, transparent 52%),
+        radial-gradient(ellipse 90% 55% at 50% 110%, rgba(120, 40, 20, 0.06) 0%, transparent 55%),
+        linear-gradient(
+          168deg,
+          #f8f2e4 0%,
+          #f2e8d0 28%,
+          #eee2c6 55%,
+          #e9dbbc 78%,
+          #e6d6b4 100%
+        );
+    }
+
+    /* 極淡宣紙紋理（SVG 噪點，tile 無接縫） */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      opacity: 0.22;
+      mix-blend-mode: multiply;
+      background-color: transparent;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+      background-size: 180px 180px;
+      background-repeat: repeat;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body::after { opacity: 0.12; }
     }
 
     /* 安裝提示（iPhone Safari） */
@@ -114,6 +157,8 @@
     .wrap {
       max-width: 520px;
       margin: 0 auto;
+      position: relative;
+      z-index: 0;
     }
 
     header.app-header {
