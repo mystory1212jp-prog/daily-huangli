@@ -1,5 +1,5 @@
 /* 每日黃曆 Service Worker — 離線可開啟 */
-const CACHE = "huangli-v23";
+const CACHE = "huangli-v24";
 const ASSETS = [
   "./",
   "./index.html",
