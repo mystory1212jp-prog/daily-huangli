@@ -1,0 +1,110 @@
+# 背後用 Docker 建置／檢驗，正面仍是 GitHub Pages 靜態站（訪客用法不變）
+#
+# 流程：
+#   1. Docker tools 映像 → verify_calendar（必要時重建 data/lib）
+#   2. 打包靜態檔 → GitHub Pages Artifact
+#   3. deploy-pages 發布
+#
+# 首次啟用（倉庫設定一次即可）：
+#   Settings → Pages → Build and deployment → Source =「GitHub Actions」
+#   （改完後不再用「Deploy from a branch」，避免兩套來源打架）
+
+name: Docker CI & Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      rebuild:
+        description: "在 Docker 內完整重建節氣／運勢資料後再部署"
+        type: boolean
+        default: false
+  # 可選：每月自動檢驗（不強制重建）
+  schedule:
+    - cron: "0 3 1 * *"
+
+concurrency:
+  group: pages-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  # ---------- 1) Docker 檢驗／重建 ----------
+  docker-ops:
+    name: Docker verify / rebuild
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build tools image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: tools
+          load: true
+          tags: daily-huangli-tools:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Rebuild all data (optional)
+        if: github.event_name == 'workflow_dispatch' && inputs.rebuild == true
+        run: |
+          docker run --rm -v "$PWD:/app" -w /app daily-huangli-tools:ci \
+            bash -lc '
+              set -e
+              python scripts/build_db.py
+              python scripts/build_personal_system.py
+              python scripts/embed_jieqi_yangsheng.py
+            '
+
+      - name: Verify calendar & fortunes
+        run: |
+          docker run --rm -v "$PWD:/app" -w /app daily-huangli-tools:ci \
+            python scripts/verify_calendar.py
+
+      - name: Stage static site only
+        run: |
+          rm -rf _site
+          mkdir -p _site
+          # 僅 Pages 需要的檔（不含 Docker／scripts 原始碼）
+          cp -a index.html sw.js manifest.webmanifest .nojekyll _site/
+          cp -a lib icons data _site/
+          # 可選說明頁
+          if [ -f IPHONE安裝說明.md ]; then cp "IPHONE安裝說明.md" _site/ || true; fi
+          # 禁止把 .git 等帶進站台
+          find _site -name '.DS_Store' -delete
+          echo "Staged files:" && find _site -type f | wc -l
+          du -sh _site
+
+      - name: Upload Pages artifact
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  # ---------- 2) 部署 GitHub Pages ----------
+  deploy:
+    name: Deploy Pages
+    needs: docker-ops
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

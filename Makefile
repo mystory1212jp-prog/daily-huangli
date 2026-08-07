@@ -6,7 +6,7 @@ export HUANGLI_PORT := $(PORT)
 
 .PHONY: help docker-build docker-up docker-down docker-logs docker-shell \
 	docker-rebuild-db docker-rebuild-personal docker-rebuild-all \
-	docker-test docker-ps status
+	docker-test docker-ps status docker-stage
 
 help:
 	@echo "每日黃曆 Docker 指令"
@@ -56,6 +56,9 @@ docker-rebuild-all: docker-rebuild-db docker-rebuild-personal docker-rebuild-jie
 
 docker-test:
 	docker compose --profile tools run --rm tools python scripts/verify_calendar.py
+
+docker-stage:
+	bash scripts/stage_site.sh
 
 docker-ps:
 	docker compose ps -a

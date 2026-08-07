@@ -72,11 +72,23 @@ python3 scripts/verify_calendar.py       # 快速檢驗
 
 ## 上傳 GitHub Pages
 
-與以往相同：推 `main` 的靜態檔即可，**不必**在 GitHub 上跑 Docker。
+### 建議：背後 Docker 運營、正面用法不變
+
+推上 `main` 後由 **GitHub Actions + Docker** 檢驗並發布靜態站；訪客仍開同一網址，無需 Docker。
+
+1. **Settings → Pages → Source** 選 **GitHub Actions**（只需設一次）  
+2. 之後：
 
 ```bash
 git add -A && git commit -m "..." && git push origin main
 ```
+
+- 工作流：`.github/workflows/docker-pages.yml`  
+- 詳細： [DOCKER.md](./DOCKER.md)
+
+### 舊方式（僅 branch 部署）
+
+若 Pages 仍設成 “Deploy from a branch / main”，推送靜態檔也會上線，但不會走 Docker 建置管線。
 
 ## 說明
 
