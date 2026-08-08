@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>專案入口 · 160.251.181.15</title>
+  <style>
+    :root {
+      --bg: #f0e6d0;
+      --ink: #1a1208;
+      --red: #8b1a1a;
+      --gold: #c9a227;
+      --card: #fffdf8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 120% 40% at 50% 0%, rgba(255, 252, 240, 0.9), transparent 70%),
+        var(--bg);
+      padding: 40px 20px 60px;
+    }
+    .wrap { max-width: 560px; margin: 0 auto; }
+    h1 {
+      font-size: 1.45rem;
+      letter-spacing: 0.12em;
+      color: var(--red);
+      margin-bottom: 8px;
+    }
+    .sub {
+      color: #6b5c48;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+    .card {
+      display: block;
+      background: var(--card);
+      border: 1px solid rgba(201, 162, 39, 0.4);
+      border-radius: 16px;
+      padding: 18px 20px;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: 0 8px 24px rgba(80, 30, 10, 0.08);
+      transition: transform 0.15s, box-shadow 0.15s;
+      margin-bottom: 14px;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(80, 30, 10, 0.12);
+    }
+    .card .name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--red);
+      letter-spacing: 0.08em;
+    }
+    .card .path {
+      margin-top: 6px;
+      font-size: 0.85rem;
+      color: #6b5c48;
+      font-family: ui-monospace, monospace;
+    }
+    .card .desc {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      line-height: 1.55;
+      color: #3a2e20;
+    }
+    .badge {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(31, 107, 58, 0.12);
+      color: #1a4d2e;
+      letter-spacing: 0.06em;
+    }
+    footer {
+      margin-top: 32px;
+      font-size: 0.78rem;
+      color: #8a7a62;
+      line-height: 1.6;
+    }
+    code {
+      background: rgba(0,0,0,0.05);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>專案入口</h1>
+    <p class="sub">
+      本機用於多系統測試。各專案掛在子路徑下，互不干擾。<br />
+      主機：<code>160.251.181.15</code>
+    </p>
+
+    <a class="card" href="/daily-huangli/">
+      <div class="name">每日黃曆</div>
+      <div class="path">/daily-huangli/</div>
+      <div class="desc">傳統黃曆、宜忌、節氣養生、個人運勢（PWA）</div>
+      <span class="badge">運行中</span>
+    </a>
+
+    <!-- 之後新系統照抄一張 card，並在 nginx 加 location -->
+    <div class="card" style="opacity: 0.72; cursor: default; box-shadow: none;">
+      <div class="name" style="color: #6b5c48;">（預留）下一個專案</div>
+      <div class="path">/your-app/</div>
+      <div class="desc">部署時在 gateway nginx 增加 location，並把檔案放到對應目錄。</div>
+    </div>
+
+    <footer>
+      新增專案：在伺服器 gateway 設定 <code>location /專案名/</code>，<br />
+      目錄建議 <code>/opt/專案名</code> 或同一 gateway 的 html 子目錄。
+    </footer>
+  </div>
+</body>
+</html>

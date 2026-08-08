@@ -1,5 +1,7 @@
-# ConoHa VPS 正式環境（僅靜態站，與 GitHub Pages 相同內容）
-# 用法（在伺服器上）：
+# ConoHa VPS 正式環境（多專案 gateway）
+#   http://IP/                 → 專案入口
+#   http://IP/daily-huangli/   → 每日黃曆
+# 用法：
 #   docker compose -f docker-compose.prod.yml up -d --build
 
 services:
@@ -8,14 +10,15 @@ services:
       context: .
       dockerfile: Dockerfile
       target: web
+      args:
+        APP_BASE_PATH: daily-huangli
     image: daily-huangli-web:prod
     container_name: daily-huangli
     restart: unless-stopped
     ports:
-      # 若前面有主機 nginx／Caddy 反代，可改 127.0.0.1:8080:80
       - "${HUANGLI_PUBLISH:-80}:80"
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/daily-huangli/"]
       interval: 30s
       timeout: 5s
       retries: 3

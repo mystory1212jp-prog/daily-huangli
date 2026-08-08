@@ -41,13 +41,19 @@ COPY . .
 # 預設進入 shell，方便互動開發
 CMD ["bash"]
 
-# ---------- web：靜態站預覽（nginx）----------
+# ---------- web：多專案 gateway（nginx）----------
+# 根 / → portal 入口；/daily-huangli/ → 黃曆靜態站
 FROM nginx:1.27-alpine AS web
 
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
-# 映像內含一份靜態檔；compose 會用 volume 覆蓋為本機最新碼
-COPY . /usr/share/nginx/html
+COPY docker/nginx.prod.conf /etc/nginx/conf.d/default.conf
+COPY portal/index.html /usr/share/nginx/html/index.html
+
+# 黃曆站放在子目錄（頁面內相對路徑 lib/、data/、sw.js 可正常解析）
+COPY index.html sw.js manifest.webmanifest .nojekyll /usr/share/nginx/html/daily-huangli/
+COPY lib /usr/share/nginx/html/daily-huangli/lib
+COPY data /usr/share/nginx/html/daily-huangli/data
+COPY icons /usr/share/nginx/html/daily-huangli/icons
 
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
-  CMD wget -q -O /dev/null http://127.0.0.1/ || exit 1
+  CMD wget -q -O /dev/null http://127.0.0.1/daily-huangli/ || exit 1

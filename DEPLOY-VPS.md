@@ -27,7 +27,22 @@ sudo usermod -aG docker $USER   # 非 root 時
 docker compose version
 ```
 
-開放防火牆（ConoHa 安全群組／iptables）**TCP 80**（與 443 若要 HTTPS）。
+### 防火牆（必做，否則外網打不開）
+
+伺服器內 `ufw` 已需允許 80/443；**ConoHa 控制面板**還要放行，否則只有 SSH(22) 通、網站會連線逾時：
+
+1. 登入 [ConoHa 控制面板](https://manage.conoha.jp/)
+2. **VPS** → 選取主機 → **網絡**／**安全組**／**パケットフィルター**（名稱因方案而異）
+3. 入站規則新增：
+   - **TCP 80**（HTTP）
+   - **TCP 443**（之後若上 HTTPS）
+4. 儲存後等 1～2 分鐘，再開 `http://你的IP/`
+
+本機可用以下確認埠是否對公網開放：
+
+```bash
+nc -z -G 5 你的IP 80 && echo open || echo blocked
+```
 
 ## 從本機一鍵部署
 
@@ -48,18 +63,23 @@ HUANGLI_PUBLISH=80 \
 VPS_HOST=你的IP ./scripts/deploy-vps.sh
 ```
 
-## 架構
+## 架構（多專案子路徑）
 
 ```
 本機 rsync ──► VPS /opt/daily-huangli
                     │
                     docker compose -f docker-compose.prod.yml up
                     │
-                    daily-huangli 容器 :80 → 訪客 http://IP/
+                    nginx gateway :80
+                      ├─ http://IP/                 → 專案入口
+                      └─ http://IP/daily-huangli/   → 每日黃曆
 ```
 
-- **不影響** GitHub Pages 與 Actions  
-- 訪客開 VPS IP／網域即可，**不必**在瀏覽器裝 Docker  
+之後新系統：在 `docker/nginx.prod.conf` 加 `location /新路徑/`，映像裡放對應子目錄即可。
+
+- **不影響** GitHub Pages（仍是 `…/daily-huangli/` 倉庫根路徑）  
+- 訪客開 VPS 子路徑即可，**不必**在瀏覽器裝 Docker  
+
 
 ## HTTPS（建議）
 

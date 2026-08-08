@@ -29,8 +29,15 @@ if [[ -z "$VPS_HOST" ]]; then
   exit 1
 fi
 
-SSH=(ssh -p "$VPS_PORT" -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}")
-RSYNC_SSH="ssh -p ${VPS_PORT} -o StrictHostKeyChecking=accept-new"
+# 優先使用 ConoHa 專用金鑰（若存在）
+SSH_ID_OPTS=()
+RSYNC_E="ssh -p ${VPS_PORT} -o StrictHostKeyChecking=accept-new"
+if [[ -f "${HOME}/.ssh/id_ed25519_conoha" ]]; then
+  SSH_ID_OPTS=(-i "${HOME}/.ssh/id_ed25519_conoha" -o IdentitiesOnly=yes)
+  RSYNC_E="ssh -p ${VPS_PORT} -i ${HOME}/.ssh/id_ed25519_conoha -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+fi
+SSH=(ssh -p "$VPS_PORT" "${SSH_ID_OPTS[@]}" -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}")
+RSYNC_SSH="$RSYNC_E"
 
 echo "==> 檢查遠端 Docker..."
 "${SSH[@]}" 'command -v docker >/dev/null || { echo "遠端未安裝 Docker"; exit 1; }; docker compose version >/dev/null 2>&1 || docker-compose version >/dev/null 2>&1 || { echo "需要 docker compose"; exit 1; }'
@@ -40,7 +47,7 @@ echo "==> 同步專案到 ${VPS_USER}@${VPS_HOST}:${VPS_PATH}"
 
 # 只同步站台與 Docker 定義（不含 .git）
 rsync -az --delete \
-  -e "$RSYNC_SSH" \
+  -e "$RSYNC_E" \
   --exclude '.git/' \
   --exclude '_site/' \
   --exclude '__pycache__/' \
@@ -48,10 +55,8 @@ rsync -az --delete \
   --exclude '*.pyc' \
   ./ "${VPS_USER}@${VPS_HOST}:${VPS_PATH}/"
 
-# 正式 nginx 設定覆寫映像內預設（建置時用 prod conf）
-echo "==> 使用正式 nginx 設定建置並啟動"
+echo "==> 建置並啟動（gateway + /daily-huangli/）"
 "${SSH[@]}" "cd '${VPS_PATH}' && \
-  cp -f docker/nginx.prod.conf docker/nginx.conf && \
   export HUANGLI_PUBLISH='${HUANGLI_PUBLISH}' && \
   (docker compose -f docker-compose.prod.yml up -d --build || \
    docker-compose -f docker-compose.prod.yml up -d --build)"
@@ -59,9 +64,11 @@ echo "==> 使用正式 nginx 設定建置並啟動"
 echo "==> 健康檢查"
 sleep 2
 "${SSH[@]}" "docker ps --filter name=daily-huangli --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
-"${SSH[@]}" "curl -s -o /dev/null -w 'local_http=%{http_code}\n' http://127.0.0.1:${HUANGLI_PUBLISH}/ || curl -s -o /dev/null -w 'local_http=%{http_code}\n' http://127.0.0.1/"
+"${SSH[@]}" "curl -s -o /dev/null -w 'portal=%{http_code}\n' http://127.0.0.1:${HUANGLI_PUBLISH}/"
+"${SSH[@]}" "curl -s -o /dev/null -w 'huangli=%{http_code}\n' http://127.0.0.1:${HUANGLI_PUBLISH}/daily-huangli/"
 
 echo ""
-echo "完成。請用瀏覽器開啟："
-echo "  http://${VPS_HOST}/"
-echo "若有網域與 HTTPS，請在主機 nginx/Caddy 反代到 127.0.0.1:${HUANGLI_PUBLISH}"
+echo "完成。請開啟："
+echo "  入口    http://${VPS_HOST}/"
+echo "  黃曆    http://${VPS_HOST}/daily-huangli/"
+echo "（若外網逾時，請在 ConoHa 安全組放行 TCP 80）"
